@@ -28,12 +28,20 @@ class WeeklyProgramPDF extends FPDF
     {
         $this->SetFillColor(...self::BLACK);
         $this->Rect(0, 0, 210, 26, 'F');
+
+        // Photo on the left (matching print_weekly.php's layout), text to its right.
+        $photoD = 20;
+        $photoCx = 12 + $photoD / 2;
+        $photoCy = 13;
+        $this->CircularPhoto(dirname(__DIR__) . '/' . MINISTER_PHOTO, $photoCx, $photoCy, $photoD);
+
+        $textX = 12 + $photoD + 6;
         $this->SetTextColor(255, 255, 255);
         $this->SetFont('Helvetica', 'B', 13);
-        $this->SetXY(12, 6);
+        $this->SetXY($textX, 6);
         $this->Cell(0, 7, pdf_txt(MINISTRY_NAME));
         $this->SetFont('Helvetica', '', 10);
-        $this->SetXY(12, 14);
+        $this->SetXY($textX, 14);
         $this->Cell(0, 6, pdf_txt(APP_NAME . ' — ' . MINISTER_NAME));
 
         $this->SetFillColor(...self::GOLD);
@@ -44,6 +52,64 @@ class WeeklyProgramPDF extends FPDF
         $this->SetXY(12, 33);
         $this->Cell(0, 8, pdf_txt('WEEKLY PROGRAM — ' . $this->rangeLabel), 0, 1, 'C');
         $this->SetY(44);
+    }
+
+    /**
+     * Draw $file cropped to a circle (a "cover" fit, biased slightly toward
+     * the top like a head-and-shoulders portrait) with a gold ring, matching
+     * the circular photo used on the site's print views. Falls back to a
+     * plain gold initials circle if the file is missing or unreadable — FPDF
+     * has no GD dependency to lean on here, unlike the browser's CSS crop.
+     */
+    private function CircularPhoto(string $file, float $cx, float $cy, float $d): void
+    {
+        $r = $d / 2;
+        $info = is_file($file) ? @getimagesize($file) : false;
+
+        $this->_out('q');
+        $this->_out($this->circlePath($cx, $cy, $r));
+        $this->_out('W n');
+
+        if ($info) {
+            [$srcW, $srcH] = $info;
+            $scale = max($d / $srcW, $d / $srcH);
+            $drawW = $srcW * $scale;
+            $drawH = $srcH * $scale;
+            $offsetX = $cx - $drawW / 2;
+            $offsetY = $cy - $r - ($drawH - $d) * 0.25; // keep more of the top in frame
+            $this->Image($file, $offsetX, $offsetY, $drawW, $drawH);
+        } else {
+            $this->SetFillColor(...self::GOLD);
+            $this->Rect($cx - $r, $cy - $r, $d, $d, 'F');
+            $this->SetTextColor(...self::BLACK);
+            $this->SetFont('Helvetica', 'B', 11);
+            $this->SetXY($cx - $r, $cy - 3);
+            $this->Cell($d, 6, 'SE', 0, 0, 'C');
+        }
+        $this->_out('Q');
+
+        $this->_out('q');
+        $this->SetDrawColor(...self::GOLD);
+        $this->SetLineWidth(0.8);
+        $this->_out($this->circlePath($cx, $cy, $r));
+        $this->_out('S');
+        $this->_out('Q');
+    }
+
+    /** PDF path-construction commands tracing a circle, via 4 cubic-bezier quarter-arcs. */
+    private function circlePath(float $cx, float $cy, float $r): string
+    {
+        $k = $this->k;
+        $h = $this->h;
+        $lx = 4 / 3 * (M_SQRT2 - 1) * $r;
+        $py = fn($y) => ($h - $y) * $k;
+
+        $cmd  = sprintf("%.2F %.2F m\n", ($cx + $r) * $k, $py($cy));
+        $cmd .= sprintf("%.2F %.2F %.2F %.2F %.2F %.2F c\n", ($cx + $r) * $k, $py($cy - $lx), ($cx + $lx) * $k, $py($cy - $r), $cx * $k, $py($cy - $r));
+        $cmd .= sprintf("%.2F %.2F %.2F %.2F %.2F %.2F c\n", ($cx - $lx) * $k, $py($cy - $r), ($cx - $r) * $k, $py($cy - $lx), ($cx - $r) * $k, $py($cy));
+        $cmd .= sprintf("%.2F %.2F %.2F %.2F %.2F %.2F c\n", ($cx - $r) * $k, $py($cy + $lx), ($cx - $lx) * $k, $py($cy + $r), $cx * $k, $py($cy + $r));
+        $cmd .= sprintf("%.2F %.2F %.2F %.2F %.2F %.2F c\n", ($cx + $lx) * $k, $py($cy + $r), ($cx + $r) * $k, $py($cy + $lx), ($cx + $r) * $k, $py($cy));
+        return $cmd;
     }
 
     public function Footer(): void
