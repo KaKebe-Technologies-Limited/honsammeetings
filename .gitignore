@@ -1,0 +1,6 @@
+# Local secrets — never commit real credentials.
+mail_secret.php
+
+# Common local/OS noise
+*.log
+Thumbs.db

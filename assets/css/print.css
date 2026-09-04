@@ -1,0 +1,128 @@
+/* Printer-friendly stylesheet used only by print_weekly.php / print_meeting.php */
+
+* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: #101112;
+  background: #fff;
+  font-size: 12.5pt;
+}
+
+.print-toolbar {
+  padding: 14px 20px;
+  background: #f5f6f8;
+  border-bottom: 1px solid #ddd;
+  text-align: right;
+}
+.print-toolbar button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #101112;
+  background: #101112;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheet {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px 34px;
+}
+
+.doc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 3px solid #101112;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+.doc-header-text { padding-top: 2px; }
+.doc-header-photo-wrap {
+  display: block;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #101112;
+  box-shadow: 0 0 0 4px #f4c20d;
+  flex-shrink: 0;
+}
+
+/* Frames a wide/press-shot photo so the circular crop centers on the face
+   instead of showing the whole scene tiny. Tuned for a head-and-shoulders
+   subject positioned slightly left-of-center, upper third of the source. */
+.photo-fit {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(2.2);
+  transform-origin: 43% 15%;
+}
+.doc-header .ministry {
+  text-transform: uppercase;
+  font-size: 10.5pt;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+.doc-header .minister { font-size: 10pt; color: #444; margin-top: 2px; }
+.doc-header .title { font-size: 15pt; font-weight: 800; margin-top: 6px; }
+
+.range-line {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12pt;
+  letter-spacing: .03em;
+  margin: 6px 0 20px;
+  padding: 6px 0;
+  border-top: 1px solid #101112;
+  border-bottom: 1px solid #101112;
+}
+
+.day-title {
+  background: #101112;
+  color: #fff;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 11pt;
+  margin-top: 16px;
+}
+
+table.day-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 4px;
+}
+table.day-table td {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  vertical-align: top;
+  font-size: 10.5pt;
+}
+table.day-table td.time {
+  width: 140px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+table.day-table td .agenda-label { font-weight: 700; }
+table.day-table td .row-line { margin: 2px 0; }
+
+.no-meetings { font-size: 10pt; color: #777; padding: 8px 12px; border: 1px dashed #ccc; margin-top: 4px; }
+
+.meeting-detail dl { display: grid; grid-template-columns: 160px 1fr; gap: 8px 14px; margin-top: 10px; }
+.meeting-detail dt { font-weight: 700; color: #333; }
+.meeting-detail dd { margin: 0; }
+.meeting-detail .agenda-block { white-space: pre-wrap; border: 1px solid #ddd; padding: 10px 12px; border-radius: 4px; margin-top: 4px; }
+
+.print-footer { margin-top: 28px; font-size: 9pt; color: #777; text-align: center; }
+
+@media print {
+  .print-toolbar { display: none; }
+  .sheet { padding: 0; max-width: none; }
+  @page { margin: 16mm 14mm; }
+}

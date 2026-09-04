@@ -1,0 +1,415 @@
+/* ============================================================
+   Minister's Weekly Schedule — main stylesheet
+   Palette: Uganda black / gold / red on a clean white ground
+   ============================================================ */
+
+:root {
+  --black: #101112;
+  --charcoal: #1c1e21;
+  --gold: #f4c20d;
+  --gold-dark: #caa10a;
+  --red: #c8102e;
+  --ink: #202124;
+  --muted: #6b7076;
+  --line: #e4e6ea;
+  --panel: #ffffff;
+  --bg: #f5f6f8;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(16,17,18,.08), 0 1px 2px rgba(16,17,18,.06);
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.45;
+}
+
+a { color: var(--black); }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ---------- Header / Branding ---------- */
+.site-header {
+  background: var(--black);
+  color: #fff;
+  border-bottom: 4px solid var(--gold);
+}
+
+.brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.brand-photo {
+  display: block;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid var(--gold);
+  background: #333;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+
+/* Frames a wide/press-shot photo so the circular crop centers on the face
+   instead of showing the whole scene tiny. Tuned for a head-and-shoulders
+   subject positioned slightly left-of-center, upper third of the source. */
+.photo-fit {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(2.2);
+  transform-origin: 43% 15%;
+}
+
+.brand-photo-fallback {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 4px solid var(--gold);
+  background: var(--charcoal);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 30px;
+  flex-shrink: 0;
+}
+
+.brand-text .ministry {
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.brand-text h1 {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.brand-text .minister-name {
+  font-size: 13px;
+  color: #cfd2d6;
+  margin-top: 2px;
+}
+
+.brand-spacer { flex: 1; }
+
+/* ---------- Nav ---------- */
+.site-nav {
+  background: var(--charcoal);
+}
+.site-nav .container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.site-nav a {
+  color: #d8dade;
+  text-decoration: none;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  display: inline-block;
+}
+.site-nav a:hover,
+.site-nav a.active {
+  color: #fff;
+  border-bottom-color: var(--gold);
+}
+.site-nav .nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.site-nav .who {
+  color: #9aa0a6;
+  font-size: 13px;
+}
+.badge-alert {
+  background: var(--red);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  margin-left: 6px;
+}
+
+/* ---------- Layout ---------- */
+.page {
+  max-width: 1100px;
+  margin: 28px auto 60px;
+  padding: 0 20px;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.page-head h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.page-head .sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1;
+}
+.btn-primary { background: var(--black); color: #fff; }
+.btn-primary:hover { background: #000; }
+.btn-gold { background: var(--gold); color: var(--black); }
+.btn-gold:hover { background: var(--gold-dark); }
+.btn-outline { background: #fff; color: var(--ink); border-color: var(--line); }
+.btn-outline:hover { background: #f0f1f3; }
+.btn-danger { background: #fff; color: var(--red); border-color: #f1c3ca; }
+.btn-danger:hover { background: #fdecee; }
+.btn-sm { padding: 6px 10px; font-size: 13px; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Cards / Panels ---------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.panel-pad { padding: 20px; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+.stat .num { font-size: 28px; font-weight: 800; color: var(--black); }
+.stat .label { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.stat.accent { border-top: 4px solid var(--gold); }
+.stat.alert { border-top: 4px solid var(--red); }
+
+/* ---------- Meeting list / cards ---------- */
+.meeting-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.meeting-card.soon { border-left: 5px solid var(--red); }
+.meeting-card:not(.soon) { border-left: 5px solid var(--gold); }
+
+.meeting-time {
+  min-width: 128px;
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--black);
+}
+.meeting-time .date { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 2px; text-transform: uppercase; letter-spacing: .03em; }
+.meeting-time .dur { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 4px; }
+
+.meeting-body { flex: 1; min-width: 0; }
+.meeting-body h3 { margin: 0 0 4px; font-size: 16px; }
+.meeting-body .meta { color: var(--muted); font-size: 13px; margin: 2px 0; }
+.meeting-body .meta strong { color: var(--ink); font-weight: 600; }
+.meeting-body .agenda { margin-top: 8px; font-size: 14px; color: var(--ink); white-space: pre-wrap; }
+
+.meeting-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+.pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fdecee;
+  color: var(--red);
+  margin-left: 8px;
+}
+.pill-trip { background: #eef2ff; color: #3730a3; }
+.pill-day { background: #f0f1f3; color: var(--muted); }
+
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+
+/* ---------- Weekly schedule ---------- */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.week-nav .range { font-weight: 700; font-size: 16px; }
+
+.day-block { margin-bottom: 18px; }
+.day-block > .day-title {
+  background: var(--black);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px 8px 0 0;
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: .02em;
+}
+.day-block .day-body {
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  background: var(--panel);
+}
+.day-block .day-body .empty { padding: 16px; text-align: left; font-size: 13px; }
+
+/* ---------- Forms ---------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.field label { font-size: 13px; font-weight: 600; color: var(--ink); }
+.field .hint { font-size: 12px; color: var(--muted); }
+input[type=text], input[type=date], input[type=time], input[type=email],
+input[type=password], textarea, select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 0 3px rgba(244,194,13,.25);
+}
+textarea { resize: vertical; min-height: 80px; }
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.alert-error { background: #fdecee; color: #8a0d24; border: 1px solid #f1c3ca; }
+.alert-success { background: #eafaf0; color: #135c2e; border: 1px solid #b9e8c9; }
+.alert-info { background: #fff8e1; color: #6b5300; border: 1px solid #f1e0a3; }
+
+/* ---------- Login ---------- */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, var(--black) 0%, var(--charcoal) 55%, var(--black) 100%);
+  padding: 20px;
+}
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  overflow: hidden;
+}
+.login-head {
+  background: var(--black);
+  border-bottom: 4px solid var(--gold);
+  padding: 28px 24px 20px;
+  text-align: center;
+}
+.login-photo {
+  display: inline-block;
+  width: 128px; height: 128px; border-radius: 50%;
+  overflow: hidden; border: 4px solid var(--gold);
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.login-head .ministry {
+  color: var(--gold); font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.login-head h1 { color: #fff; font-size: 18px; margin: 6px 0 0; }
+.login-body { padding: 26px 24px 28px; }
+.login-body .btn { width: 100%; justify-content: center; margin-top: 6px; }
+.login-body .field { margin-bottom: 14px; }
+.login-foot { text-align: center; font-size: 12px; color: var(--muted); padding: 0 24px 22px; }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 28px 20px 40px;
+}
+
+/* ---------- Utility ---------- */
+.text-muted { color: var(--muted); }
+.mt-0 { margin-top: 0; }
+.no-print { }
+
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .meeting-card { flex-direction: column; }
+  .meeting-actions { flex-direction: row; }
+  .brand-bar { flex-wrap: wrap; }
+}
