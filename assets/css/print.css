@@ -118,6 +118,7 @@ table.day-table td .row-line { margin: 2px 0; }
 .meeting-detail dt { font-weight: 700; color: #333; }
 .meeting-detail dd { margin: 0; }
 .meeting-detail .agenda-block { white-space: pre-wrap; border: 1px solid #ddd; padding: 10px 12px; border-radius: 4px; margin-top: 4px; }
+.meeting-detail .notes-block { border-color: #f4c20d; border-left-width: 3px; background: #fffdf5; }
 
 .print-footer { margin-top: 28px; font-size: 9pt; color: #777; text-align: center; }
 

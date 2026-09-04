@@ -18,6 +18,11 @@ define('MINISTER_NAME', 'Hon. Sam Engola');
 define('MINISTER_PHOTO', 'assets/img/min1.jpg'); // relative to BASE_URL
 define('BASE_URL', '/honsammeetings'); // change if hosted at a different path
 
+// Fully-qualified base URL used in outgoing emails (links must work from any
+// device, not just this machine's browser). Update this once the app is
+// hosted on a real domain.
+define('SITE_URL', 'http://localhost' . BASE_URL);
+
 // ---- Email reminders (sent via authenticated SMTP, see includes/mailer.php) ----
 // Real credentials live in mail_secret.php (gitignored — never committed).
 // Copy mail_secret.sample.php to mail_secret.php and fill in your own values.

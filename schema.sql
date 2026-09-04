@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS meetings (
   venue                  VARCHAR(200) NOT NULL,   -- venue for in-house, destination for trips
   agenda                 TEXT NULL,
   attendees              TEXT NULL,
+  contact                VARCHAR(150) NULL,       -- contact person for this meeting/trip, e.g. "0775004767 - Charlot"
+  notes                  TEXT NULL,               -- important details / things to check, separate from the agenda
   reminder_sent          TINYINT(1) NOT NULL DEFAULT 0,
   reminder_hours_before  INT NOT NULL DEFAULT 24,
   created_by             INT NULL,
@@ -32,4 +34,24 @@ CREATE TABLE IF NOT EXISTS meetings (
   INDEX idx_meeting_date (meeting_date),
   INDEX idx_end_date (end_date),
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- Staff who can be picked as the accompanying team on a meeting/trip.
+-- Managed via staff.php; seeded with the two standing commissioner roles.
+CREATE TABLE IF NOT EXISTS staff (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  name       VARCHAR(150) NOT NULL,
+  active     TINYINT(1) NOT NULL DEFAULT 1,   -- inactive staff are hidden from the picker but kept for history
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO staff (name) VALUES ('Commissioner Disaster'), ('Commissioner Refugees Management');
+
+-- Many-to-many: which staff are accompanying a given meeting/trip.
+CREATE TABLE IF NOT EXISTS meeting_staff (
+  meeting_id INT NOT NULL,
+  staff_id   INT NOT NULL,
+  PRIMARY KEY (meeting_id, staff_id),
+  FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE,
+  FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

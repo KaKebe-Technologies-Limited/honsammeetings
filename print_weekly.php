@@ -4,16 +4,16 @@ require_once __DIR__ . '/includes/functions.php';
 require_login();
 
 $offset = isset($_GET['w']) ? (int) $_GET['w'] : 0;
-[$monday, $sunday] = week_range('today', $offset);
+[$monday, $friday] = week_range('today', $offset);
 
-$weekMeetings = meetings_between($monday, $sunday);
+$weekMeetings = meetings_between($monday, $friday);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Weekly Schedule &middot; <?= e(fmt_date_short($monday)) ?>&ndash;<?= e(fmt_date_short($sunday)) ?></title>
+<title>Weekly Schedule &middot; <?= e(fmt_date_short($monday)) ?>&ndash;<?= e(fmt_date_short($friday)) ?></title>
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">
 </head>
 <body>
@@ -22,24 +22,24 @@ $weekMeetings = meetings_between($monday, $sunday);
 </div>
 <div class="sheet">
   <div class="doc-header">
+    <span class="doc-header-photo-wrap">
+      <img class="photo-fit" src="<?= BASE_URL ?>/<?= MINISTER_PHOTO ?>" alt="<?= e(MINISTER_NAME) ?>"
+           onerror="this.closest('.doc-header-photo-wrap').remove()">
+    </span>
     <div class="doc-header-text">
       <div class="ministry"><?= e(MINISTRY_NAME) ?></div>
       <div class="minister"><?= e(MINISTER_NAME) ?></div>
       <div class="title">Weekly Schedule</div>
     </div>
-    <span class="doc-header-photo-wrap">
-      <img class="photo-fit" src="<?= BASE_URL ?>/<?= MINISTER_PHOTO ?>" alt="<?= e(MINISTER_NAME) ?>"
-           onerror="this.closest('.doc-header-photo-wrap').remove()">
-    </span>
   </div>
 
   <div class="range-line">
-    WEEKLY SCHEDULE &mdash; <?= strtoupper(e((new DateTime($monday))->format('jS F'))) ?> TO <?= strtoupper(e((new DateTime($sunday))->format('jS F Y'))) ?>
+    WEEKLY SCHEDULE &mdash; <?= strtoupper(e((new DateTime($monday))->format('jS F'))) ?> TO <?= strtoupper(e((new DateTime($friday))->format('jS F Y'))) ?>
   </div>
 
   <?php
   $cursor = new DateTime($monday);
-  for ($i = 0; $i < 7; $i++):
+  for ($i = 0; $i < 5; $i++):
       $ymd = $cursor->format('Y-m-d');
       $dayMeetings = array_values(array_filter($weekMeetings, fn($m) => meeting_covers_day($m, $ymd)));
   ?>
@@ -48,7 +48,7 @@ $weekMeetings = meetings_between($monday, $sunday);
       <div class="no-meetings">No meetings scheduled.</div>
     <?php else: ?>
       <table class="day-table">
-        <?php foreach ($dayMeetings as $m): $isTrip = $m['event_type'] === 'trip'; $badge = trip_day_badge($m, $ymd); ?>
+        <?php foreach ($dayMeetings as $m): $isTrip = $m['event_type'] === 'trip'; $badge = trip_day_badge($m, $ymd); $team = array_column(meeting_team((int) $m['id']), 'name'); ?>
           <tr>
             <td class="time">
               <?php if ($isTrip): ?>
@@ -59,9 +59,12 @@ $weekMeetings = meetings_between($monday, $sunday);
             </td>
             <td>
               <div class="row-line"><strong><?= e($m['title']) ?></strong><?= $isTrip ? ' (' . e(fmt_date_range($m['meeting_date'], $m['end_date'] ?: $m['meeting_date'])) . ')' : '' ?></div>
-              <div class="row-line"><?= $isTrip ? 'Destination' : 'Venue' ?>: <?= e($m['venue']) ?></div>
+              <div class="row-line">Venue: <?= e($m['venue']) ?></div>
               <?php if ($m['agenda']): ?><div class="row-line"><span class="agenda-label">Agenda:</span> <?= e($m['agenda']) ?></div><?php endif; ?>
               <?php if ($m['attendees']): ?><div class="row-line">Attendees: <?= e($m['attendees']) ?></div><?php endif; ?>
+              <?php if (!empty($m['contact'])): ?><div class="row-line">Contact: <?= e($m['contact']) ?></div><?php endif; ?>
+              <?php if ($team): ?><div class="row-line">Team: <?= e(join_names($team)) ?></div><?php endif; ?>
+              <?php if (!empty($m['notes'])): ?><div class="row-line"><span class="agenda-label">Notes:</span> <?= e($m['notes']) ?></div><?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

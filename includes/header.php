@@ -41,6 +41,7 @@ $dueCount = count($dueSoon);
     <a href="<?= BASE_URL ?>/schedule.php" class="<?= $active === 'schedule' ? 'active' : '' ?>">Weekly Schedule</a>
     <a href="<?= BASE_URL ?>/meetings.php" class="<?= $active === 'meetings' ? 'active' : '' ?>">All Meetings</a>
     <a href="<?= BASE_URL ?>/meeting_edit.php" class="<?= $active === 'add' ? 'active' : '' ?>">+ Add Meeting</a>
+    <a href="<?= BASE_URL ?>/staff.php" class="<?= $active === 'staff' ? 'active' : '' ?>">Staff</a>
     <div class="nav-right">
       <?php if ($dueCount > 0): ?>
         <a href="<?= BASE_URL ?>/index.php" title="Meetings/trips due for a reminder">

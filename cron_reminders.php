@@ -38,8 +38,7 @@ if (!$due) {
     exit;
 }
 
-$to = array_values(array_filter(array_column(db()->query('SELECT email FROM users')->fetchAll(), 'email')));
-$cc = defined('MAIL_CC_LIST') ? MAIL_CC_LIST : [];
+[$to, $cc] = reminder_recipients();
 
 if (!$to && !$cc) {
     echo "No recipients configured (no users, no MAIL_CC_LIST) — nothing to send.\n";
@@ -50,32 +49,11 @@ $sent = 0;
 $failed = 0;
 
 foreach ($due as $m) {
-    $isTrip = $m['event_type'] === 'trip';
-
-    if ($isTrip) {
-        $subject = 'Reminder: Trip — ' . $m['title'] . ' (' . fmt_date_short($m['meeting_date']) . ')';
-        $body = "TRIP REMINDER\n\n"
-            . "Title:        {$m['title']}\n"
-            . "Departure:    " . fmt_date_long($m['meeting_date']) . ($m['start_time'] ? ' at ' . fmt_time($m['start_time']) : '') . "\n"
-            . "Return:       " . fmt_date_long($m['end_date'] ?: $m['meeting_date']) . ($m['end_time'] ? ' at ' . fmt_time($m['end_time']) : '') . "\n"
-            . "Length:       " . trip_length_label($m) . "\n"
-            . "Destination:  {$m['venue']}\n"
-            . ($m['attendees'] ? "Attendees:    {$m['attendees']}\n" : '')
-            . ($m['agenda'] ? "\nPurpose:\n{$m['agenda']}\n" : '');
-    } else {
-        $subject = 'Reminder: ' . $m['title'] . ' — ' . fmt_date_short($m['meeting_date']);
-        $body = "MEETING REMINDER\n\n"
-            . "Title:  {$m['title']}\n"
-            . "Date:   " . fmt_date_long($m['meeting_date']) . "\n"
-            . "Time:   " . fmt_time($m['start_time']) . " - " . fmt_time($m['end_time']) . "\n"
-            . "Venue:  {$m['venue']}\n"
-            . ($m['attendees'] ? "Attendees: {$m['attendees']}\n" : '')
-            . ($m['agenda'] ? "\nAgenda:\n{$m['agenda']}\n" : '');
-    }
-    $body .= "\n-- " . SMTP_FROM_NAME;
+    [$subject, $body] = build_reminder_email($m);
+    $html = build_reminder_email_html($m);
 
     try {
-        send_mail_smtp($to, $subject, $body, $cc);
+        send_mail_smtp($to, $subject, $body, $cc, $html);
         $stmt = db()->prepare('UPDATE meetings SET reminder_sent = 1 WHERE id = ?');
         $stmt->execute([$m['id']]);
         $sent++;

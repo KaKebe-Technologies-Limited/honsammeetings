@@ -7,9 +7,9 @@ $page_title = 'Weekly Schedule';
 $active     = 'schedule';
 
 $offset = isset($_GET['w']) ? (int) $_GET['w'] : 0;
-[$monday, $sunday] = week_range('today', $offset);
+[$monday, $friday] = week_range('today', $offset);
 
-$weekMeetings = meetings_between($monday, $sunday);
+$weekMeetings = meetings_between($monday, $friday);
 
 $dueIds = array_column(meetings_in_reminder_window(), 'id');
 $today  = date('Y-m-d');
@@ -20,11 +20,14 @@ require __DIR__ . '/includes/header.php';
   <?php if (isset($_GET['saved'])): ?>
     <div class="alert alert-success">Saved successfully.</div>
   <?php endif; ?>
+  <?php if ($flash = flash_get()): ?>
+    <div class="alert alert-<?= e($flash['type']) ?>"><?= e($flash['text']) ?></div>
+  <?php endif; ?>
 
   <div class="page-head">
     <div>
       <h2>Weekly Schedule</h2>
-      <div class="sub"><?= e(fmt_date_long($monday)) ?> &ndash; <?= e(fmt_date_long($sunday)) ?></div>
+      <div class="sub"><?= e(fmt_date_long($monday)) ?> &ndash; <?= e(fmt_date_long($friday)) ?></div>
     </div>
     <div class="btn-row">
       <a href="<?= BASE_URL ?>/meeting_edit.php" class="btn btn-gold">+ Add Meeting / Trip</a>
@@ -36,12 +39,12 @@ require __DIR__ . '/includes/header.php';
     <a class="btn btn-outline btn-sm" href="?w=<?= $offset - 1 ?>">← Previous week</a>
     <?php if ($offset !== 0): ?><a class="btn btn-outline btn-sm" href="?w=0">This week</a><?php endif; ?>
     <a class="btn btn-outline btn-sm" href="?w=<?= $offset + 1 ?>">Next week →</a>
-    <span class="range">Mon–Sun</span>
+    <span class="range">Mon–Fri</span>
   </div>
 
   <?php
   $cursor = new DateTime($monday);
-  for ($i = 0; $i < 7; $i++):
+  for ($i = 0; $i < 5; $i++):
       $ymd = $cursor->format('Y-m-d');
       $dayMeetings = array_values(array_filter($weekMeetings, fn($m) => meeting_covers_day($m, $ymd)));
   ?>

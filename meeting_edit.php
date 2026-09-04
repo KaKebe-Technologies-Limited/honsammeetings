@@ -19,8 +19,13 @@ $meeting = [
     'venue'                 => '',
     'agenda'                => '',
     'attendees'             => '',
+    'contact'               => '',
+    'notes'                 => '',
     'reminder_hours_before' => REMINDER_LEAD_HOURS,
 ];
+
+$allStaff = all_staff();
+$selectedTeam = [];
 
 if ($editing) {
     $stmt = db()->prepare('SELECT * FROM meetings WHERE id = ?');
@@ -31,6 +36,7 @@ if ($editing) {
         exit;
     }
     $meeting = $found;
+    $selectedTeam = array_column(meeting_team($id), 'id');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,7 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title     = trim($_POST['title'] ?? '');
     $venue     = trim($_POST['venue'] ?? '');
     $attendees = trim($_POST['attendees'] ?? '');
+    $contact   = trim($_POST['contact'] ?? '');
+    $notes     = trim($_POST['notes'] ?? '');
     $agenda    = trim($_POST['agenda'] ?? '');
+    $selectedTeam = array_map('intval', $_POST['team'] ?? []);
     $reminderHours = (int) ($_POST['reminder_hours_before'] ?? REMINDER_LEAD_HOURS);
     if (!array_key_exists($reminderHours, REMINDER_OPTIONS)) {
         $reminderHours = REMINDER_LEAD_HOURS;
@@ -71,6 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'venue' => $venue,
         'agenda' => $agenda,
         'attendees' => $attendees,
+        'contact' => $contact,
+        'notes' => $notes,
         'reminder_hours_before' => $reminderHours,
     ];
 
@@ -109,26 +120,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($editing) {
                 $stmt = db()->prepare(
                     'UPDATE meetings SET event_type=?, title=?, meeting_date=?, end_date=?, start_time=?, end_time=?,
-                     venue=?, agenda=?, attendees=?, reminder_hours_before=?, reminder_sent=0
+                     venue=?, agenda=?, attendees=?, contact=?, notes=?, reminder_hours_before=?, reminder_sent=0
                      WHERE id=?'
                 );
                 $stmt->execute([
                     $eventType, $title, $dateFrom, $dateTo, $startTime, $endTime,
-                    $venue, $agenda, $attendees, $reminderHours,
+                    $venue, $agenda, $attendees, $contact, $notes, $reminderHours,
                     $id,
                 ]);
+                $savedId = $id;
             } else {
                 $stmt = db()->prepare(
                     'INSERT INTO meetings (event_type, title, meeting_date, end_date, start_time, end_time,
-                     venue, agenda, attendees, reminder_hours_before, created_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                     venue, agenda, attendees, contact, notes, reminder_hours_before, created_by)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                 );
                 $stmt->execute([
                     $eventType, $title, $dateFrom, $dateTo, $startTime, $endTime,
-                    $venue, $agenda, $attendees, $reminderHours,
+                    $venue, $agenda, $attendees, $contact, $notes, $reminderHours,
                     current_user()['id'],
                 ]);
+                $savedId = (int) db()->lastInsertId();
             }
+            save_meeting_team($savedId, $selectedTeam);
             header('Location: ' . BASE_URL . '/schedule.php?saved=1');
             exit;
         }
@@ -213,11 +227,41 @@ require __DIR__ . '/includes/header.php';
         <div class="field full">
           <label>Attendees (optional)</label>
           <input type="text" name="attendees" maxlength="500" value="<?= e($meeting['attendees']) ?>" placeholder="e.g. PS, Commissioners, UNHCR Rep">
+          <span class="hint">External people, by name/role — not tracked in the Staff list.</span>
+        </div>
+
+        <div class="field full">
+          <label>Accompanying Team (optional)</label>
+          <?php if (!$allStaff): ?>
+            <div class="hint">No staff added yet. <a href="<?= BASE_URL ?>/staff_edit.php" target="_blank">Add staff</a> to pick them here.</div>
+          <?php else: ?>
+            <div class="team-picker">
+              <?php foreach ($allStaff as $s): ?>
+                <label class="team-option">
+                  <input type="checkbox" name="team[]" value="<?= (int) $s['id'] ?>" <?= in_array((int) $s['id'], $selectedTeam, true) ? 'checked' : '' ?>>
+                  <?= e($s['name']) ?>
+                </label>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+          <span class="hint">OPM staff accompanying the Minister — managed on the <a href="<?= BASE_URL ?>/staff.php" target="_blank">Staff</a> page.</span>
+        </div>
+
+        <div class="field full">
+          <label>Contact Person (optional)</label>
+          <input type="text" name="contact" maxlength="150" value="<?= e($meeting['contact']) ?>" placeholder="e.g. 0775004767 - Charlot">
+          <span class="hint">Who to reach about this engagement — shown on the schedule and included in the reminder email.</span>
         </div>
 
         <div class="field full">
           <label>Agenda / Purpose</label>
           <textarea name="agenda" placeholder="Brief description…"><?= e($meeting['agenda']) ?></textarea>
+        </div>
+
+        <div class="field full">
+          <label>Notes (optional)</label>
+          <textarea name="notes" placeholder="Important details or things to keep in check — documents to bring, prep needed, dress code, etc."><?= e($meeting['notes']) ?></textarea>
+          <span class="hint">Shown on the schedule, print views, and included in the reminder email.</span>
         </div>
 
         <div class="field full">
@@ -242,7 +286,6 @@ require __DIR__ . '/includes/header.php';
 <script>
 (function () {
   var typeSel = document.getElementById('eventType');
-  var venueLabel = document.getElementById('venueLabel');
   var venueInput = document.getElementById('venueInput');
   var meetingDate = document.getElementById('meetingDate');
   var startTime = document.getElementById('startTime');
@@ -267,7 +310,6 @@ require __DIR__ . '/includes/header.php';
     tripStartDate.required = isTrip;
     tripEndDate.required = isTrip;
 
-    venueLabel.textContent = isTrip ? 'Destination *' : 'Venue / Location *';
     venueInput.placeholder = isTrip ? 'e.g. Nairobi, Kenya' : 'e.g. State House';
   }
 

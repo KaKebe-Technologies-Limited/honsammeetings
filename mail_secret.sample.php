@@ -15,4 +15,4 @@ define('SMTP_FROM', SMTP_USERNAME);
 define('SMTP_FROM_NAME', "Minister's Office Scheduler");
 
 // Always CC'd on every reminder email, in addition to registered users.
-define('MAIL_CC_LIST', ['ot.sedrick@gmail.com']);
+define('MAIL_CC_LIST', ['ot.sedrick@gmail.com', 'clarechoda35@gmail.com', 'clarechoda34@gmail.com']);

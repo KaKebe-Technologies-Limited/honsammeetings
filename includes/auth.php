@@ -69,3 +69,19 @@ function csrf_check(): void
         exit('Invalid or expired form token. Please go back and try again.');
     }
 }
+
+/** One-shot flash message, shown on the next page load then cleared. */
+function flash_set(string $type, string $text): void
+{
+    $_SESSION['flash'] = ['type' => $type, 'text' => $text];
+}
+
+function flash_get(): ?array
+{
+    if (empty($_SESSION['flash'])) {
+        return null;
+    }
+    $flash = $_SESSION['flash'];
+    unset($_SESSION['flash']);
+    return $flash;
+}

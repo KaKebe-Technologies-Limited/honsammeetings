@@ -13,9 +13,11 @@ class SmtpMailError extends Exception {}
  *
  * @param string[] $to  Primary recipient email addresses.
  * @param string[] $cc  CC'd email addresses.
+ * @param ?string  $htmlBody  When given, sent as multipart/alternative alongside $textBody
+ *                             (the plain-text version email clients fall back to).
  * @throws SmtpMailError on any failure (caller decides how to log/report it).
  */
-function send_mail_smtp(array $to, string $subject, string $textBody, array $cc = []): void
+function send_mail_smtp(array $to, string $subject, string $textBody, array $cc = [], ?string $htmlBody = null): void
 {
     if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
         throw new SmtpMailError('SMTP is not configured (mail_secret.php missing or incomplete).');
@@ -104,11 +106,29 @@ function send_mail_smtp(array $to, string $subject, string $textBody, array $cc 
     $headers[] = 'Subject: ' . mb_encode_mimeheader($subject, 'UTF-8');
     $headers[] = 'Date: ' . date('r');
     $headers[] = 'MIME-Version: 1.0';
-    $headers[] = 'Content-Type: text/plain; charset=UTF-8';
-    $headers[] = 'Content-Transfer-Encoding: 8bit';
+
+    if ($htmlBody !== null) {
+        $boundary = 'bnd_' . bin2hex(random_bytes(16));
+        $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"';
+
+        $bodyText =
+            "--{$boundary}\r\n"
+            . "Content-Type: text/plain; charset=UTF-8\r\n"
+            . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+            . $textBody . "\r\n\r\n"
+            . "--{$boundary}\r\n"
+            . "Content-Type: text/html; charset=UTF-8\r\n"
+            . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+            . $htmlBody . "\r\n\r\n"
+            . "--{$boundary}--";
+    } else {
+        $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+        $headers[] = 'Content-Transfer-Encoding: 8bit';
+        $bodyText = $textBody;
+    }
 
     // Dot-stuff any line starting with a lone "." per RFC 5321.
-    $escapedBody = preg_replace('/^\./m', '..', $textBody);
+    $escapedBody = preg_replace('/^\./m', '..', $bodyText);
 
     $message = implode("\r\n", $headers) . "\r\n\r\n" . $escapedBody . "\r\n.";
     $write($message);

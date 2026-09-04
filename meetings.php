@@ -33,6 +33,9 @@ $today = date('Y-m-d');
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="page">
+  <?php if ($flash = flash_get()): ?>
+    <div class="alert alert-<?= e($flash['type']) ?>"><?= e($flash['text']) ?></div>
+  <?php endif; ?>
   <div class="page-head">
     <div>
       <h2>All Meetings &amp; Trips</h2>
