@@ -15,9 +15,11 @@ class SmtpMailError extends Exception {}
  * @param string[] $cc  CC'd email addresses.
  * @param ?string  $htmlBody  When given, sent as multipart/alternative alongside $textBody
  *                             (the plain-text version email clients fall back to).
+ * @param array<int,array{filename:string,content:string,mime:string}> $attachments
+ *                             Binary file attachments, e.g. a generated PDF.
  * @throws SmtpMailError on any failure (caller decides how to log/report it).
  */
-function send_mail_smtp(array $to, string $subject, string $textBody, array $cc = [], ?string $htmlBody = null): void
+function send_mail_smtp(array $to, string $subject, string $textBody, array $cc = [], ?string $htmlBody = null, array $attachments = []): void
 {
     if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
         throw new SmtpMailError('SMTP is not configured (mail_secret.php missing or incomplete).');
@@ -107,24 +109,48 @@ function send_mail_smtp(array $to, string $subject, string $textBody, array $cc 
     $headers[] = 'Date: ' . date('r');
     $headers[] = 'MIME-Version: 1.0';
 
+    // The text/plain (+ optional text/html) part, standalone or nested inside
+    // a multipart/mixed envelope when there are attachments.
     if ($htmlBody !== null) {
-        $boundary = 'bnd_' . bin2hex(random_bytes(16));
-        $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"';
-
-        $bodyText =
-            "--{$boundary}\r\n"
+        $altBoundary = 'alt_' . bin2hex(random_bytes(16));
+        $altContentType = 'multipart/alternative; boundary="' . $altBoundary . '"';
+        $altBody =
+            "--{$altBoundary}\r\n"
             . "Content-Type: text/plain; charset=UTF-8\r\n"
             . "Content-Transfer-Encoding: 8bit\r\n\r\n"
             . $textBody . "\r\n\r\n"
-            . "--{$boundary}\r\n"
+            . "--{$altBoundary}\r\n"
             . "Content-Type: text/html; charset=UTF-8\r\n"
             . "Content-Transfer-Encoding: 8bit\r\n\r\n"
             . $htmlBody . "\r\n\r\n"
-            . "--{$boundary}--";
+            . "--{$altBoundary}--";
     } else {
-        $headers[] = 'Content-Type: text/plain; charset=UTF-8';
-        $headers[] = 'Content-Transfer-Encoding: 8bit';
-        $bodyText = $textBody;
+        $altContentType = 'text/plain; charset=UTF-8';
+        $altBody = $textBody;
+    }
+
+    if ($attachments) {
+        $mixBoundary = 'mix_' . bin2hex(random_bytes(16));
+        $headers[] = 'Content-Type: multipart/mixed; boundary="' . $mixBoundary . '"';
+
+        $bodyText = "--{$mixBoundary}\r\nContent-Type: {$altContentType}\r\n"
+            . ($htmlBody === null ? "Content-Transfer-Encoding: 8bit\r\n" : '')
+            . "\r\n" . $altBody . "\r\n\r\n";
+        foreach ($attachments as $att) {
+            $bodyText .= "--{$mixBoundary}\r\n"
+                . "Content-Type: {$att['mime']}; name=\"{$att['filename']}\"\r\n"
+                . "Content-Transfer-Encoding: base64\r\n"
+                . "Content-Disposition: attachment; filename=\"{$att['filename']}\"\r\n\r\n"
+                . chunk_split(base64_encode($att['content']))
+                . "\r\n";
+        }
+        $bodyText .= "--{$mixBoundary}--";
+    } else {
+        $headers[] = 'Content-Type: ' . $altContentType;
+        if ($htmlBody === null) {
+            $headers[] = 'Content-Transfer-Encoding: 8bit';
+        }
+        $bodyText = $altBody;
     }
 
     // Dot-stuff any line starting with a lone "." per RFC 5321.

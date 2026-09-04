@@ -1,5 +1,6 @@
 # Local secrets — never commit real credentials.
 mail_secret.php
+db_secret.php
 
 # Common local/OS noise
 *.log

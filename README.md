@@ -7,21 +7,26 @@ Minister's weekly meeting schedule — built for
 ## Features
 
 - Login-protected dashboard (only authorized staff can create/edit/delete)
-- Create / edit / delete meetings (date, time, venue, agenda, attendees)
+- Create / edit / delete meetings and trips (date, time, venue, agenda,
+  attendees, contact person, notes, accompanying staff team)
+- Manage a Staff list (`staff.php`) so a meeting/trip's accompanying team can
+  be picked from a checklist instead of typed freehand
 - Duration auto-calculated from start/end time
-- Weekly (Mon–Sun) schedule view with week navigation, color-coded for
-  meetings coming up in the next 24 hours
+- Weekly (Mon–Fri) schedule view with week navigation, color-coded for
+  meetings coming up soon
 - Dashboard notification badge for meetings due soon
 - Printer-friendly weekly schedule and single-meeting print views
-- Email reminders sent ~24 hours before each meeting (via a small script
-  you run on a schedule)
+- Branded HTML email reminders sent ahead of each meeting (per-item lead
+  time), plus a one-click "Remind now" button on every meeting card
+- One-click "Email Weekly Program (PDF)" — sends the current week's full
+  schedule as a formatted PDF to every registered user
 
 ## Requirements
 
 - XAMPP (Apache + PHP 8+ + MySQL/MariaDB) — you already have this, since the
   project lives in `C:\xampp\htdocs\honsammeetings`.
 
-## Setup
+## Setup (local development)
 
 1. **Start Apache and MySQL** in the XAMPP Control Panel.
 2. Add the Minister's photo: save it as
@@ -29,16 +34,40 @@ Minister's weekly meeting schedule — built for
    in the header/login page, and top-right on printed sheets. The filename
    is set once in `config.php` (`MINISTER_PHOTO`) — change both together if
    you swap the photo for a different file.
-3. In your browser go to:
-   `http://localhost/honsammeetings/install.php`
-   This creates the `honsam_meetings` database, its tables, and lets you
-   create the first admin account (full name, username, email, password).
-4. After the admin account is created, **delete or rename `install.php`**
-   (leaving it live is a security risk).
-5. Log in at `http://localhost/honsammeetings/login.php`.
+3. Import `schema.sql` into MySQL (via phpMyAdmin, or
+   `mysql -u root < schema.sql`) — creates the `honsam_meetings` database
+   and all its tables, and seeds the standing Staff roles.
+4. Create your first admin user directly in the `users` table (username,
+   `password_hash` via PHP's `password_hash()`, full name, email).
+5. Copy `mail_secret.sample.php` to `mail_secret.php` and fill in real SMTP
+   credentials (see that file for instructions).
+6. Log in at `http://localhost/honsammeetings/login.php`.
 
-If your XAMPP MySQL uses a different user/password, edit `config.php`
-(`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) before running the installer.
+Locally, `config.php` uses XAMPP defaults (`root` / no password / database
+`honsam_meetings`) automatically — no edits needed unless your local MySQL
+setup differs.
+
+## Deploying to production (opmschedules.site)
+
+The whole project — including `config.php` — is pushed via git, but the
+live database password and the live `SITE_URL`/`BASE_URL` must **never** be
+committed. `config.php` handles this the same way it already does for SMTP:
+
+- Locally, no extra file is needed — `config.php` falls back to the XAMPP
+  defaults shown above.
+- On the live server, copy `db_secret.sample.php` to `db_secret.php` (same
+  folder as `config.php`) and fill in the real live database host/name/user/
+  password, plus `BASE_URL` and `SITE_URL` for that domain. This file is
+  gitignored — it only ever exists on the server it's meant for, never in
+  the repo, and never on a local dev machine (its mere presence is what
+  switches `config.php` from local defaults to production).
+- Likewise copy `mail_secret.sample.php` to `mail_secret.php` on the live
+  server with real SMTP credentials.
+- Import `schema.sql` into the live database once, the same way as locally.
+
+So a normal deploy is: `git push` to update the code, then nothing else —
+`db_secret.php` and `mail_secret.php` already live on the server and are
+untouched by the push.
 
 ## Email reminders
 

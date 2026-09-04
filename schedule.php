@@ -32,6 +32,8 @@ require __DIR__ . '/includes/header.php';
     <div class="btn-row">
       <a href="<?= BASE_URL ?>/meeting_edit.php" class="btn btn-gold">+ Add Meeting / Trip</a>
       <a href="<?= BASE_URL ?>/print_weekly.php?w=<?= $offset ?>" target="_blank" class="btn btn-outline">🖨 Print This Week</a>
+      <a href="<?= BASE_URL ?>/send_weekly_program.php?w=<?= $offset ?>" class="btn btn-outline"
+         onclick="return confirm('Email this week\'s program as a PDF to every registered user now?');">📧 Email Weekly Program (PDF)</a>
     </div>
   </div>
 

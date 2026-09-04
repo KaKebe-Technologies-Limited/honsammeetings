@@ -387,6 +387,37 @@ function build_reminder_email_html(array $m): string
     ";
 }
 
+/** Build the styled HTML body for the "weekly program PDF" email (the PDF itself is attached by the caller). */
+function build_weekly_program_email_html(string $monday, string $friday, int $meetingCount): string
+{
+    $chrome = email_chrome('Weekly Program');
+    $link   = SITE_URL . '/schedule.php';
+    $rangeLabel = fmt_date_long($monday) . ' – ' . fmt_date_long($friday);
+
+    return "
+    <html>
+    <head><style>{$chrome['style']}</style></head>
+    <body>
+        <div class='container'>
+            {$chrome['headerHtml']}
+            <div class='content'>
+                <p class='kicker'>📅 Weekly Program</p>
+                <p>Please find attached the Minister's finalized weekly program as a PDF, ready to print or forward.</p>
+                <div class='detail'>
+                    <p><span class='label'>🗓 Week:</span> " . e($rangeLabel) . "</p>
+                    <p><span class='label'>📋 Items:</span> " . $meetingCount . " meeting" . ($meetingCount === 1 ? '' : 's') . "/trip" . ($meetingCount === 1 ? '' : 's') . "</p>
+                </div>
+                <p style='text-align:center;margin-top:26px;'><a href='{$link}' class='btn'>🔍 View Online</a></p>
+            </div>
+            <div class='footer'>
+                <p>" . e(MINISTRY_NAME) . "<br>&copy; " . date('Y') . " " . e(APP_NAME) . "</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+}
+
 /** Every registered user's email + the fixed CC list, for reminder sends. */
 function reminder_recipients(): array
 {

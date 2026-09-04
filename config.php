@@ -4,11 +4,24 @@
  * Edit the database credentials and SMTP settings to match your server.
  */
 
-// ---- Database (XAMPP defaults) ----
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'honsam_meetings');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// ---- Environment: database + site URL ----
+// Local defaults below are for XAMPP. On the live server, db_secret.php
+// (gitignored — never committed) overrides these with the production
+// database and https://opmschedules.site URL. Copy db_secret.sample.php to
+// db_secret.php ON THE LIVE SERVER ONLY (never locally — its presence is
+// what switches this file from local XAMPP defaults to production).
+if (file_exists(__DIR__ . '/db_secret.php')) {
+    require_once __DIR__ . '/db_secret.php';
+} else {
+    define('DB_HOST', '127.0.0.1');
+    define('DB_NAME', 'honsam_meetings');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+    define('BASE_URL', '/honsammeetings'); // change if hosted at a different path
+    // Fully-qualified base URL used in outgoing emails (links must work from
+    // any device, not just this machine's browser).
+    define('SITE_URL', 'http://localhost' . BASE_URL);
+}
 define('DB_CHARSET', 'utf8mb4');
 
 // ---- Application ----
@@ -16,12 +29,6 @@ define('APP_NAME', "Minister's Weekly Schedule");
 define('MINISTRY_NAME', 'Office of the Minister for Relief, Disaster Preparedness and Refugees');
 define('MINISTER_NAME', 'Hon. Sam Engola');
 define('MINISTER_PHOTO', 'assets/img/min1.jpg'); // relative to BASE_URL
-define('BASE_URL', '/honsammeetings'); // change if hosted at a different path
-
-// Fully-qualified base URL used in outgoing emails (links must work from any
-// device, not just this machine's browser). Update this once the app is
-// hosted on a real domain.
-define('SITE_URL', 'http://localhost' . BASE_URL);
 
 // ---- Email reminders (sent via authenticated SMTP, see includes/mailer.php) ----
 // Real credentials live in mail_secret.php (gitignored — never committed).
