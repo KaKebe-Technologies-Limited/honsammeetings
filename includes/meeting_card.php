@@ -11,12 +11,19 @@ $dayContext = $dayContext ?? null;
 $isTrip = $m['event_type'] === 'trip';
 $dayBadge = $isTrip ? trip_day_badge($m, $dayContext ?? $m['meeting_date']) : null;
 $team = array_column(meeting_team((int) $m['id']), 'name');
+$hasClash = meeting_has_clash($m);
 ?>
 <div class="meeting-card <?= $soon ? 'soon' : '' ?>">
   <div class="meeting-time">
     <?php if ($isTrip): ?>
       <span class="date"><?= e(fmt_date_range($m['meeting_date'], $m['end_date'] ?: $m['meeting_date'])) ?></span>
-      <?php if ($m['start_time']): ?>Departs <?= e(fmt_time($m['start_time'])) ?><?php endif; ?>
+      <?php if ($m['start_time'] && $m['end_time']): ?>
+        <?= e(fmt_time($m['start_time'])) ?> – <?= e(fmt_time($m['end_time'])) ?>
+      <?php elseif ($m['start_time']): ?>
+        Start <?= e(fmt_time($m['start_time'])) ?>
+      <?php elseif ($m['end_time']): ?>
+        End <?= e(fmt_time($m['end_time'])) ?>
+      <?php endif; ?>
     <?php else: ?>
       <span class="date"><?= e(fmt_date_short($m['meeting_date'])) ?></span>
       <?= e(fmt_time($m['start_time'])) ?> – <?= e(fmt_time($m['end_time'])) ?>
@@ -29,6 +36,7 @@ $team = array_column(meeting_team((int) $m['id']), 'name');
       <?php if ($isTrip): ?><span class="pill pill-trip">💼 Trip</span><?php endif; ?>
       <?php if ($dayBadge): ?><span class="pill pill-day"><?= e($dayBadge) ?></span><?php endif; ?>
       <?php if ($soon): ?><span class="pill">Upcoming</span><?php endif; ?>
+      <?php if ($hasClash): ?><span class="pill pill-clash">⚠ Clash</span><?php endif; ?>
     </h3>
     <div class="meta"><?= $isTrip ? '💼' : '📍' ?> <strong><?= e($m['venue']) ?></strong></div>
     <?php if ($m['attendees']): ?><div class="meta">👥 <?= e($m['attendees']) ?></div><?php endif; ?>

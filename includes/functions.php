@@ -235,6 +235,20 @@ function find_scheduling_conflicts(
     return ['duplicate' => $duplicate, 'overlaps' => $overlaps];
 }
 
+/**
+ * Whether a saved meeting/trip currently clashes with another engagement.
+ * Clashes are allowed (not blocked at save time) but stay flagged wherever
+ * the meeting is shown, since they're the kind of thing worth double-checking.
+ */
+function meeting_has_clash(array $m): bool
+{
+    $conflict = find_scheduling_conflicts(
+        $m['title'], $m['event_type'], $m['meeting_date'], $m['end_date'] ?: $m['meeting_date'],
+        $m['start_time'], $m['end_time'], (int) $m['id']
+    );
+    return (bool) $conflict['overlaps'];
+}
+
 function e(?string $s): string
 {
     return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8');
@@ -252,8 +266,8 @@ function build_reminder_email(array $m): array
         $subject = 'Reminder: Trip — ' . $m['title'] . ' (' . fmt_date_short($m['meeting_date']) . ')';
         $body = "TRIP REMINDER\n\n"
             . "Title:        {$m['title']}\n"
-            . "Departure:    " . fmt_date_long($m['meeting_date']) . ($m['start_time'] ? ' at ' . fmt_time($m['start_time']) : '') . "\n"
-            . "Return:       " . fmt_date_long($m['end_date'] ?: $m['meeting_date']) . ($m['end_time'] ? ' at ' . fmt_time($m['end_time']) : '') . "\n"
+            . "Start:        " . fmt_date_long($m['meeting_date']) . ($m['start_time'] ? ' at ' . fmt_time($m['start_time']) : '') . "\n"
+            . "End:          " . fmt_date_long($m['end_date'] ?: $m['meeting_date']) . ($m['end_time'] ? ' at ' . fmt_time($m['end_time']) : '') . "\n"
             . "Length:       " . trip_length_label($m) . "\n"
             . "Venue:        {$m['venue']}\n"
             . ($m['attendees'] ? "Attendees:    {$m['attendees']}\n" : '')
@@ -335,8 +349,8 @@ function build_reminder_email_html(array $m): string
     $rows[] = "<p><span class='label'>📌 Title:</span> " . e($m['title']) . "</p>";
 
     if ($isTrip) {
-        $rows[] = "<p><span class='label'>📤 Departure:</span> " . e(fmt_date_long($m['meeting_date'])) . ($m['start_time'] ? ' at ' . e(fmt_time($m['start_time'])) : '') . "</p>";
-        $rows[] = "<p><span class='label'>📥 Return:</span> " . e(fmt_date_long($m['end_date'] ?: $m['meeting_date'])) . ($m['end_time'] ? ' at ' . e(fmt_time($m['end_time'])) : '') . "</p>";
+        $rows[] = "<p><span class='label'>🕐 Start:</span> " . e(fmt_date_long($m['meeting_date'])) . ($m['start_time'] ? ' at ' . e(fmt_time($m['start_time'])) : '') . "</p>";
+        $rows[] = "<p><span class='label'>🕐 End:</span> " . e(fmt_date_long($m['end_date'] ?: $m['meeting_date'])) . ($m['end_time'] ? ' at ' . e(fmt_time($m['end_time'])) : '') . "</p>";
         $rows[] = "<p><span class='label'>⏱ Length:</span> " . e(trip_length_label($m)) . "</p>";
         $rows[] = "<p><span class='label'>📍 Venue:</span> " . e($m['venue']) . "</p>";
     } else {

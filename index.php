@@ -1,7 +1,11 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
-require_login();
+
+if (!is_logged_in()) {
+    require __DIR__ . '/home.php';
+    exit;
+}
 
 $page_title = 'Dashboard';
 $active     = 'dashboard';

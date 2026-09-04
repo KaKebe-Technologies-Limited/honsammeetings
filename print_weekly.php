@@ -53,6 +53,9 @@ $weekMeetings = meetings_between($monday, $friday);
             <td class="time">
               <?php if ($isTrip): ?>
                 TRIP<?php if ($badge): ?><br><span style="font-weight:400;font-size:9pt;"><?= e($badge) ?></span><?php endif; ?>
+                <?php if ($m['start_time'] || $m['end_time']): ?>
+                  <br><span style="font-weight:400;font-size:9pt;"><?= $m['start_time'] ? e(fmt_time($m['start_time'])) : '?' ?> &ndash; <?= $m['end_time'] ? e(fmt_time($m['end_time'])) : '?' ?></span>
+                <?php endif; ?>
               <?php else: ?>
                 <?= e(fmt_time($m['start_time'])) ?> &ndash; <?= e(fmt_time($m['end_time'])) ?>
               <?php endif; ?>

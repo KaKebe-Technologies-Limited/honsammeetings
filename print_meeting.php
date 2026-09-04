@@ -48,8 +48,8 @@ $team = array_column(meeting_team($id), 'name');
 
     <dl>
       <?php if ($isTrip): ?>
-        <dt>Departure</dt><dd><?= e(fmt_date_long($m['meeting_date'])) ?><?= $m['start_time'] ? ' at ' . e(fmt_time($m['start_time'])) : '' ?></dd>
-        <dt>Return</dt><dd><?= e(fmt_date_long($m['end_date'] ?: $m['meeting_date'])) ?><?= $m['end_time'] ? ' at ' . e(fmt_time($m['end_time'])) : '' ?></dd>
+        <dt>Start</dt><dd><?= e(fmt_date_long($m['meeting_date'])) ?><?= $m['start_time'] ? ' at ' . e(fmt_time($m['start_time'])) : '' ?></dd>
+        <dt>End</dt><dd><?= e(fmt_date_long($m['end_date'] ?: $m['meeting_date'])) ?><?= $m['end_time'] ? ' at ' . e(fmt_time($m['end_time'])) : '' ?></dd>
         <dt>Length</dt><dd><?= e(trip_length_label($m)) ?></dd>
         <dt>Venue</dt><dd><?= e($m['venue']) ?></dd>
       <?php else: ?>

@@ -157,7 +157,14 @@ class WeeklyProgramPDF extends FPDF
         $lines[] = ['label' => null, 'text' => $m['title'] . ($isTrip
             ? ' (' . fmt_date_range($m['meeting_date'], $m['end_date'] ?: $m['meeting_date']) . ')'
             : ''), 'bold' => true];
-        $lines[] = ['label' => 'Time', 'text' => $isTrip ? ('Trip' . ($badge ? " ({$badge})" : '')) : fmt_time($m['start_time']) . ' - ' . fmt_time($m['end_time'])];
+        if ($isTrip) {
+            $tripTime = ($m['start_time'] || $m['end_time'])
+                ? (($m['start_time'] ? fmt_time($m['start_time']) : '?') . ' - ' . ($m['end_time'] ? fmt_time($m['end_time']) : '?'))
+                : 'Trip';
+            $lines[] = ['label' => 'Time', 'text' => $tripTime . ($badge ? " ({$badge})" : '')];
+        } else {
+            $lines[] = ['label' => 'Time', 'text' => fmt_time($m['start_time']) . ' - ' . fmt_time($m['end_time'])];
+        }
         $lines[] = ['label' => 'Venue', 'text' => $m['venue']];
         if ($m['agenda'])            $lines[] = ['label' => 'Agenda', 'text' => $m['agenda']];
         if ($m['attendees'])         $lines[] = ['label' => 'Attendees', 'text' => $m['attendees']];

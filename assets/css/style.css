@@ -285,6 +285,7 @@ a { color: var(--black); }
 .pill-trip { background: #eef2ff; color: #3730a3; }
 .pill-day { background: #f0f1f3; color: var(--muted); }
 .pill-active { background: #eafaf0; color: #135c2e; }
+.pill-clash { background: #fdecee; color: #8a0d24; }
 
 .staff-table { width: 100%; border-collapse: collapse; }
 .staff-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); }
@@ -365,6 +366,7 @@ textarea { resize: vertical; min-height: 80px; }
 .alert-error { background: #fdecee; color: #8a0d24; border: 1px solid #f1c3ca; }
 .alert-success { background: #eafaf0; color: #135c2e; border: 1px solid #b9e8c9; }
 .alert-info { background: #fff8e1; color: #6b5300; border: 1px solid #f1e0a3; }
+.alert-warning { background: #fff8e1; color: #6b5300; border: 1px solid #f1e0a3; }
 
 /* ---------- Login ---------- */
 .login-wrap {
@@ -405,6 +407,7 @@ textarea { resize: vertical; min-height: 80px; }
 .login-body .btn { width: 100%; justify-content: center; margin-top: 6px; }
 .login-body .field { margin-bottom: 14px; }
 .login-foot { text-align: center; font-size: 12px; color: var(--muted); padding: 0 24px 22px; }
+.landing-tagline { text-align: center; color: var(--muted); font-size: 14px; margin: 0 0 18px; line-height: 1.5; }
 
 /* ---------- Footer ---------- */
 .site-footer {

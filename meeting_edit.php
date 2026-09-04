@@ -6,7 +6,6 @@ require_login();
 $id      = isset($_GET['id']) ? (int) $_GET['id'] : (isset($_POST['id']) ? (int) $_POST['id'] : 0);
 $editing = $id > 0;
 $error   = null;
-$conflictRows = [];
 
 $today = date('Y-m-d');
 $meeting = [
@@ -109,14 +108,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $d = $conflict['duplicate'];
             $error = 'This looks like a duplicate — an identical entry "' . $d['title'] . '" already exists on '
                 . fmt_date_range($d['meeting_date'], $d['end_date'] ?: $d['meeting_date']) . '.';
-        } elseif ($conflict['overlaps']) {
-            $names = array_map(
-                fn($r) => '"' . $r['title'] . '" (' . fmt_date_range($r['meeting_date'], $r['end_date'] ?: $r['meeting_date']) . ')',
-                $conflict['overlaps']
-            );
-            $error = 'This clashes with an existing engagement: ' . implode('; ', $names) . '. Please adjust the date/time.';
-            $conflictRows = $conflict['overlaps'];
         } else {
+            // A time clash is allowed through — just warned about, not blocked.
+            $clashWarning = null;
+            if ($conflict['overlaps']) {
+                $names = array_map(
+                    fn($r) => '"' . $r['title'] . '" (' . fmt_date_range($r['meeting_date'], $r['end_date'] ?: $r['meeting_date']) . ')',
+                    $conflict['overlaps']
+                );
+                $clashWarning = 'Saved, but this clashes with: ' . implode('; ', $names) . '.';
+            }
+
             if ($editing) {
                 $stmt = db()->prepare(
                     'UPDATE meetings SET event_type=?, title=?, meeting_date=?, end_date=?, start_time=?, end_time=?,
@@ -143,7 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $savedId = (int) db()->lastInsertId();
             }
             save_meeting_team($savedId, $selectedTeam);
-            header('Location: ' . BASE_URL . '/schedule.php?saved=1');
+            if ($clashWarning) {
+                flash_set('warning', $clashWarning);
+                header('Location: ' . BASE_URL . '/schedule.php');
+            } else {
+                header('Location: ' . BASE_URL . '/schedule.php?saved=1');
+            }
             exit;
         }
     }
@@ -216,11 +223,11 @@ require __DIR__ . '/includes/header.php';
           <span class="hint">Every day from departure to return is blocked on the calendar.</span>
         </div>
         <div class="field" id="grpTripStartTime" hidden>
-          <label>Departure time (optional)</label>
+          <label>Start time (optional)</label>
           <input type="time" name="trip_start_time" id="tripStartTime" value="<?= e($isTrip ? substr((string) $meeting['start_time'], 0, 5) : '') ?>">
         </div>
         <div class="field" id="grpTripEndTime" hidden>
-          <label>Return time (optional)</label>
+          <label>End time (optional)</label>
           <input type="time" name="trip_end_time" id="tripEndTime" value="<?= e($isTrip ? substr((string) $meeting['end_time'], 0, 5) : '') ?>">
         </div>
 
