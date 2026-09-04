@@ -54,7 +54,7 @@ require __DIR__ . '/includes/header.php';
       <div class="day-title"><?= e($cursor->format('l, jS F Y')) ?><?= $ymd === $today ? '  •  Today' : '' ?></div>
       <div class="day-body">
         <?php if (!$dayMeetings): ?>
-          <div class="empty">No meetings scheduled.</div>
+          <div class="empty"><?= e(empty_day_label($ymd)) ?></div>
         <?php else: ?>
           <div style="padding:14px;">
           <?php foreach ($dayMeetings as $m):

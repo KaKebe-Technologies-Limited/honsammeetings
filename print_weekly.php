@@ -45,7 +45,7 @@ $weekMeetings = meetings_between($monday, $friday);
   ?>
     <div class="day-title"><?= strtoupper(e($cursor->format('l, jS F Y'))) ?></div>
     <?php if (!$dayMeetings): ?>
-      <div class="no-meetings">No meetings scheduled.</div>
+      <div class="no-meetings"><?= e(empty_day_label($ymd)) ?></div>
     <?php else: ?>
       <table class="day-table">
         <?php foreach ($dayMeetings as $m): $isTrip = $m['event_type'] === 'trip'; $badge = trip_day_badge($m, $ymd); $team = array_column(meeting_team((int) $m['id']), 'name'); ?>

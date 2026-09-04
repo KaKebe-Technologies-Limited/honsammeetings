@@ -15,6 +15,16 @@ function week_range(string $reference = 'today', int $weekOffset = 0): array
     return [$monday->format('Y-m-d'), $friday->format('Y-m-d')];
 }
 
+/**
+ * Label for a day with nothing on the calendar. Fridays default to
+ * "Constituency Engagements" (the standing use of an otherwise-open Friday)
+ * rather than a plain "nothing scheduled" empty state.
+ */
+function empty_day_label(string $ymd): string
+{
+    return (int) (new DateTime($ymd))->format('N') === 5 ? 'Constituency Engagements' : 'No meetings scheduled.';
+}
+
 function fmt_date_long(string $ymd): string
 {
     return (new DateTime($ymd))->format('l, jS F Y');

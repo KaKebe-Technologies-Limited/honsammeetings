@@ -137,11 +137,11 @@ class WeeklyProgramPDF extends FPDF
         $this->Ln(1.5);
     }
 
-    public function NoMeetings(): void
+    public function NoMeetings(string $label): void
     {
         $this->SetFont('Helvetica', 'I', 9);
         $this->SetTextColor(...self::MUTED);
-        $this->Cell(0, 7, '  No meetings scheduled.', 0, 1);
+        $this->Cell(0, 7, '  ' . pdf_txt($label), 0, 1);
         $this->SetTextColor(...self::BLACK);
         $this->Ln(2);
     }
@@ -257,7 +257,7 @@ function build_weekly_program_pdf(string $monday, string $friday): string
         $pdf->DayHeader(strtoupper($cursor->format('l, jS F Y')));
 
         if (!$dayMeetings) {
-            $pdf->NoMeetings();
+            $pdf->NoMeetings(empty_day_label($ymd));
         } else {
             foreach ($dayMeetings as $m) {
                 $pdf->MeetingBlock($m, $ymd);
