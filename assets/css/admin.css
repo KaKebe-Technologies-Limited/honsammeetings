@@ -1,0 +1,179 @@
+/* ============================================================
+   Super Admin platform dashboard — Uganda flag colors
+   (deliberately distinct from the per-ministry app's own
+   black/gold look in style.css; this is a different audience)
+   ============================================================ */
+
+:root {
+  --ug-black: #000000;
+  --ug-charcoal: #17181a;
+  --ug-yellow: #FCDC04;
+  --ug-yellow-dark: #d9bc00;
+  --ug-red: #D90000;
+  --ug-red-dark: #ad0000;
+  --ink: #1c1d1f;
+  --muted: #6b7076;
+  --line: #e6e7ea;
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.07), 0 6px 18px rgba(0,0,0,.05);
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.45;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Shell layout ---------- */
+.admin-shell { display: flex; min-height: 100vh; }
+
+.admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--ug-black);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.admin-logo { display: flex; align-items: center; gap: 12px; padding: 0 6px 22px; border-bottom: 1px solid #2a2b2d; margin-bottom: 18px; }
+.admin-flag { display: block; width: 44px; height: 30px; border-radius: 4px; overflow: hidden; border: 1px solid var(--ug-yellow); flex-shrink: 0; }
+.admin-flag svg { display: block; width: 100%; height: 100%; }
+.admin-logo-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; }
+.admin-logo-tag { font-size: 11px; color: var(--ug-yellow); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; margin-top: 2px; }
+
+.admin-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.admin-nav a {
+  padding: 11px 12px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  color: #cfd0d3;
+}
+.admin-nav a:hover { background: #232426; color: #fff; }
+.admin-nav a.active { background: var(--ug-yellow); color: var(--ug-black); }
+
+.admin-sidebar-foot { border-top: 1px solid #2a2b2d; padding-top: 14px; }
+.admin-sidebar-foot a { display: block; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #cfd0d3; }
+.admin-sidebar-foot a:hover { background: var(--ug-red); color: #fff; }
+
+.admin-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.admin-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 28px; background: var(--panel); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 5;
+}
+.admin-search input {
+  width: 260px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--bg); font-size: 13px;
+}
+.admin-profile { display: flex; align-items: center; gap: 10px; }
+.admin-profile-name { font-size: 13px; font-weight: 600; }
+.admin-profile-badge { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; background: var(--ug-red); color: #fff; padding: 4px 10px; border-radius: 999px; }
+
+.admin-content { padding: 26px 28px 40px; max-width: 1280px; width: 100%; margin: 0 auto; }
+
+/* ---------- Page head / panels ---------- */
+.admin-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.admin-page-head h1 { margin: 0; font-size: 22px; }
+.admin-page-head .sub { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+
+.admin-panel { background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow); }
+.admin-panel-pad { padding: 22px 24px; }
+
+/* ---------- KPI / stat cards ---------- */
+.admin-stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.admin-stat-card {
+  background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 18px 20px; border-top: 4px solid var(--ug-yellow);
+}
+.admin-stat-card.accent-red { border-top-color: var(--ug-red); }
+.admin-stat-card .num { font-size: 28px; font-weight: 800; line-height: 1; }
+.admin-stat-card .label { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+
+/* ---------- Dashboard grid ---------- */
+.admin-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } }
+
+.admin-card-title { font-size: 15px; font-weight: 700; margin: 0 0 14px; display: flex; align-items: center; justify-content: space-between; }
+.admin-card-title a { font-size: 12.5px; font-weight: 600; color: var(--ug-red); }
+
+/* Chart */
+.admin-chart-bars { display: flex; align-items: flex-end; gap: 10px; height: 160px; padding-top: 10px; }
+.admin-chart-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.admin-chart-bar .bar { width: 100%; max-width: 34px; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, var(--ug-yellow), var(--ug-yellow-dark)); }
+.admin-chart-bar .val { font-size: 11px; font-weight: 700; color: var(--ink); }
+.admin-chart-bar .lbl { font-size: 11px; color: var(--muted); }
+
+/* Progress cards (top active ministries) */
+.admin-progress-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.admin-progress-card { background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; }
+.admin-progress-card .name { font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+.admin-progress-card .meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.admin-progress-track { height: 8px; border-radius: 99px; background: var(--bg); overflow: hidden; }
+.admin-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--ug-red), var(--ug-yellow)); }
+
+/* Ministries list */
+.admin-ministry-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.admin-ministry-row:last-child { border-bottom: none; }
+.admin-ministry-photo { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid var(--ug-yellow); flex-shrink: 0; background: var(--ug-black); display: flex; align-items: center; justify-content: center; color: var(--ug-yellow); font-weight: 800; font-size: 13px; }
+.admin-ministry-photo img { width: 100%; height: 100%; object-fit: cover; }
+.admin-ministry-info { flex: 1; min-width: 0; }
+.admin-ministry-info .name { font-size: 13.5px; font-weight: 700; }
+.admin-ministry-info .meta { font-size: 12px; color: var(--muted); }
+
+/* Flag feature panel (in place of the mockup's literal live map — no
+   meaningful geodata for this app, so this is a branded panel instead) */
+.admin-flag-panel { background: var(--ug-black); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; text-align: center; color: #fff; }
+.admin-flag-panel .flag-large { width: 100%; max-width: 220px; margin: 0 auto 14px; border-radius: 8px; overflow: hidden; border: 3px solid var(--ug-yellow); }
+.admin-flag-panel h3 { margin: 0 0 6px; font-size: 15px; }
+.admin-flag-panel p { margin: 0; font-size: 12.5px; color: #cfd0d3; }
+
+/* ---------- Tables ---------- */
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.admin-table td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 13.5px; }
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* ---------- Buttons / forms / pills (own copies — no shared stylesheet) ---------- */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; border: 1px solid transparent; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.btn-yellow { background: var(--ug-yellow); color: var(--ug-black); }
+.btn-yellow:hover { background: var(--ug-yellow-dark); }
+.btn-red { background: var(--ug-red); color: #fff; }
+.btn-red:hover { background: var(--ug-red-dark); }
+.btn-outline { background: #fff; color: var(--ink); border-color: var(--line); }
+.btn-outline:hover { background: var(--bg); }
+.btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+.pill { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; padding: 3px 10px; border-radius: 999px; }
+.pill-active { background: #eafaf0; color: #135c2e; }
+.pill-super { background: var(--ug-red); color: #fff; }
+.pill-office { background: #eef0f3; color: var(--muted); }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field[hidden] { display: none; }
+.field label { font-size: 13px; font-weight: 700; }
+.field .hint { font-size: 12px; color: var(--muted); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid .full { grid-column: 1 / -1; }
+input[type=text], input[type=email], input[type=password], select {
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; width: 100%; font-family: inherit;
+}
+input:focus, select:focus { outline: 2px solid var(--ug-yellow); outline-offset: 1px; }
+
+.alert { padding: 12px 16px; border-radius: 8px; font-size: 13.5px; margin-bottom: 18px; }
+.alert-error { background: #fdecee; color: #8a0d24; border: 1px solid #f1c3ca; }
+.alert-success { background: #eafaf0; color: #135c2e; border: 1px solid #b9e8c9; }
+.alert-warning { background: #fff8e1; color: #6b5300; border: 1px solid #f1e0a3; }
+
+.empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 14px; }

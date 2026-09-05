@@ -4,9 +4,7 @@ require_once __DIR__ . '/includes/functions.php';
 require_login();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = db()->prepare('SELECT * FROM meetings WHERE id = ?');
-$stmt->execute([$id]);
-$m = $stmt->fetch();
+$m = find_meeting($id);
 
 if (!$m) {
     header('Location: ' . BASE_URL . '/meetings.php');
@@ -14,6 +12,7 @@ if (!$m) {
 }
 $isTrip = $m['event_type'] === 'trip';
 $team = array_column(meeting_team($id), 'name');
+$ministry = ministry_by_id((int) $m['ministry_id']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,13 +28,15 @@ $team = array_column(meeting_team($id), 'name');
 </div>
 <div class="sheet">
   <div class="doc-header">
+    <?php if (!empty($ministry['minister_photo'])): ?>
     <span class="doc-header-photo-wrap">
-      <img class="photo-fit" src="<?= BASE_URL ?>/<?= MINISTER_PHOTO ?>" alt="<?= e(MINISTER_NAME) ?>"
+      <img class="photo-fit" src="<?= BASE_URL ?>/<?= e($ministry['minister_photo']) ?>" alt="<?= e($ministry['minister_name'] ?? '') ?>"
            onerror="this.closest('.doc-header-photo-wrap').remove()">
     </span>
+    <?php endif; ?>
     <div class="doc-header-text">
-      <div class="ministry"><?= e(MINISTRY_NAME) ?></div>
-      <div class="minister"><?= e(MINISTER_NAME) ?></div>
+      <div class="ministry"><?= e($ministry['name'] ?? '') ?></div>
+      <div class="minister"><?= e($ministry['minister_name'] ?? '') ?></div>
       <div class="title"><?= $isTrip ? 'Trip Detail' : 'Meeting Detail' ?></div>
     </div>
   </div>

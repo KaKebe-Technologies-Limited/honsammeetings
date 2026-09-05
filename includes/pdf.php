@@ -17,6 +17,8 @@ function pdf_txt(?string $s): string
 class WeeklyProgramPDF extends FPDF
 {
     public string $rangeLabel = '';
+    /** @var array{name:string,minister_name:string,minister_photo:?string} */
+    public array $ministry = ['name' => '', 'minister_name' => '', 'minister_photo' => null];
 
     private const BLACK = [16, 17, 18];
     private const GOLD  = [244, 194, 13];
@@ -33,16 +35,17 @@ class WeeklyProgramPDF extends FPDF
         $photoD = 20;
         $photoCx = 12 + $photoD / 2;
         $photoCy = 13;
-        $this->CircularPhoto(dirname(__DIR__) . '/' . MINISTER_PHOTO, $photoCx, $photoCy, $photoD);
+        $photoPath = $this->ministry['minister_photo'] ? dirname(__DIR__) . '/' . $this->ministry['minister_photo'] : '';
+        $this->CircularPhoto($photoPath, $photoCx, $photoCy, $photoD, initials_from_name($this->ministry['minister_name'] ?: $this->ministry['name']));
 
         $textX = 12 + $photoD + 6;
         $this->SetTextColor(255, 255, 255);
         $this->SetFont('Helvetica', 'B', 13);
         $this->SetXY($textX, 6);
-        $this->Cell(0, 7, pdf_txt(MINISTRY_NAME));
+        $this->Cell(0, 7, pdf_txt($this->ministry['name']));
         $this->SetFont('Helvetica', '', 10);
         $this->SetXY($textX, 14);
-        $this->Cell(0, 6, pdf_txt(APP_NAME . ' — ' . MINISTER_NAME));
+        $this->Cell(0, 6, pdf_txt(APP_NAME . ' — ' . $this->ministry['minister_name']));
 
         $this->SetFillColor(...self::GOLD);
         $this->Rect(0, 26, 210, 2, 'F');
@@ -61,10 +64,10 @@ class WeeklyProgramPDF extends FPDF
      * plain gold initials circle if the file is missing or unreadable — FPDF
      * has no GD dependency to lean on here, unlike the browser's CSS crop.
      */
-    private function CircularPhoto(string $file, float $cx, float $cy, float $d): void
+    private function CircularPhoto(string $file, float $cx, float $cy, float $d, string $fallbackInitials = '?'): void
     {
         $r = $d / 2;
-        $info = is_file($file) ? @getimagesize($file) : false;
+        $info = ($file !== '' && is_file($file)) ? @getimagesize($file) : false;
 
         $this->_out('q');
         $this->_out($this->circlePath($cx, $cy, $r));
@@ -84,7 +87,7 @@ class WeeklyProgramPDF extends FPDF
             $this->SetTextColor(...self::BLACK);
             $this->SetFont('Helvetica', 'B', 11);
             $this->SetXY($cx - $r, $cy - 3);
-            $this->Cell($d, 6, 'SE', 0, 0, 'C');
+            $this->Cell($d, 6, pdf_txt($fallbackInitials), 0, 0, 'C');
         }
         $this->_out('Q');
 
@@ -239,11 +242,12 @@ class WeeklyProgramPDF extends FPDF
 }
 
 /** Build the current (or any) Mon-Fri week's program PDF and return raw PDF bytes. */
-function build_weekly_program_pdf(string $monday, string $friday): string
+function build_weekly_program_pdf(string $monday, string $friday, int $ministryId): string
 {
-    $weekMeetings = meetings_between($monday, $friday);
+    $weekMeetings = meetings_between($monday, $friday, $ministryId);
 
     $pdf = new WeeklyProgramPDF();
+    $pdf->ministry = ministry_by_id($ministryId) ?? $pdf->ministry;
     $pdf->rangeLabel = strtoupper((new DateTime($monday))->format('jS F') . ' to ' . (new DateTime($friday))->format('jS F Y'));
     $pdf->SetMargins(12, 12, 12);
     $pdf->SetAutoPageBreak(true, 18);

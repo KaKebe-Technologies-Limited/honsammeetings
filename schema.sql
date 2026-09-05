@@ -4,17 +4,31 @@
 CREATE DATABASE IF NOT EXISTS honsam_meetings CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE honsam_meetings;
 
+-- A ministry office (tenant). Each office's meetings/staff/users are isolated
+-- to its own ministry_id — see includes/auth.php's resolve_ministry_id().
+CREATE TABLE IF NOT EXISTS ministries (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  name           VARCHAR(200) NOT NULL,             -- e.g. "Office of the Minister for Relief, Disaster Preparedness and Refugees"
+  minister_name  VARCHAR(150) NOT NULL,             -- e.g. "Hon. Sam Engola"
+  minister_photo VARCHAR(255) NULL,                 -- path relative to BASE_URL, e.g. "assets/img/min1.jpg"
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS users (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   username      VARCHAR(50)  NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name     VARCHAR(100) NOT NULL,
   email         VARCHAR(150) NOT NULL,
-  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  role          ENUM('super_admin','office_admin') NOT NULL DEFAULT 'office_admin',
+  ministry_id   INT NULL,                           -- NULL only for super_admin (platform-wide, not tied to one office)
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (ministry_id) REFERENCES ministries(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS meetings (
   id                     INT AUTO_INCREMENT PRIMARY KEY,
+  ministry_id            INT NOT NULL,
   title                  VARCHAR(200) NOT NULL,
   event_type             ENUM('inhouse','trip') NOT NULL DEFAULT 'inhouse',
   meeting_date           DATE NOT NULL,
@@ -31,21 +45,24 @@ CREATE TABLE IF NOT EXISTS meetings (
   created_by             INT NULL,
   created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_ministry_id (ministry_id),
   INDEX idx_meeting_date (meeting_date),
   INDEX idx_end_date (end_date),
+  FOREIGN KEY (ministry_id) REFERENCES ministries(id) ON DELETE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Staff who can be picked as the accompanying team on a meeting/trip.
--- Managed via staff.php; seeded with the two standing commissioner roles.
+-- Managed via staff.php, scoped per ministry.
 CREATE TABLE IF NOT EXISTS staff (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  name       VARCHAR(150) NOT NULL,
-  active     TINYINT(1) NOT NULL DEFAULT 1,   -- inactive staff are hidden from the picker but kept for history
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  ministry_id INT NOT NULL,
+  name        VARCHAR(150) NOT NULL,
+  active      TINYINT(1) NOT NULL DEFAULT 1,   -- inactive staff are hidden from the picker but kept for history
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_ministry_id (ministry_id),
+  FOREIGN KEY (ministry_id) REFERENCES ministries(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-
-INSERT INTO staff (name) VALUES ('Commissioner Disaster'), ('Commissioner Refugees Management');
 
 -- Many-to-many: which staff are accompanying a given meeting/trip.
 CREATE TABLE IF NOT EXISTS meeting_staff (

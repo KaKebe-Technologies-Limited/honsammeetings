@@ -8,16 +8,21 @@ $editing = $id > 0;
 $error   = null;
 
 $person = ['name' => '', 'active' => 1];
+$ministryId = null;
 
 if ($editing) {
-    $stmt = db()->prepare('SELECT * FROM staff WHERE id = ?');
-    $stmt->execute([$id]);
-    $found = $stmt->fetch();
+    $found = find_staff($id);
     if (!$found) {
         header('Location: ' . BASE_URL . '/staff.php');
         exit;
     }
     $person = $found;
+    $ministryId = (int) $found['ministry_id'];
+} else {
+    $ministryId = resolve_ministry_id();
+    if (!$ministryId) {
+        redirect_no_ministry();
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,11 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = db()->prepare('UPDATE staff SET name = ?, active = ? WHERE id = ?');
             $stmt->execute([$name, $isActive, $id]);
         } else {
-            $stmt = db()->prepare('INSERT INTO staff (name, active) VALUES (?, ?)');
-            $stmt->execute([$name, $isActive]);
+            $stmt = db()->prepare('INSERT INTO staff (ministry_id, name, active) VALUES (?, ?, ?)');
+            $stmt->execute([$ministryId, $name, $isActive]);
         }
         flash_set('success', ($editing ? 'Updated ' : 'Added ') . e($name) . '.');
-        header('Location: ' . BASE_URL . '/staff.php');
+        header('Location: ' . BASE_URL . '/staff.php' . ministry_qs($ministryId, '?'));
         exit;
     }
 }
@@ -77,7 +82,7 @@ require __DIR__ . '/includes/header.php';
 
       <div class="btn-row" style="margin-top:8px;">
         <button type="submit" class="btn btn-primary"><?= $editing ? 'Save Changes' : 'Save' ?></button>
-        <a href="<?= BASE_URL ?>/staff.php" class="btn btn-outline">Cancel</a>
+        <a href="<?= BASE_URL ?>/staff.php<?= ministry_qs($ministryId, '?') ?>" class="btn btn-outline">Cancel</a>
       </div>
     </form>
   </div>

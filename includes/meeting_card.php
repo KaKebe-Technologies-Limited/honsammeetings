@@ -46,11 +46,11 @@ $hasClash = meeting_has_clash($m);
     <?php if (!empty($m['notes'])): ?><div class="notes">⚠ <?= nl2br(e($m['notes'])) ?></div><?php endif; ?>
   </div>
   <div class="meeting-actions">
-    <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/meeting_edit.php?id=<?= (int) $m['id'] ?>">Edit</a>
-    <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/print_meeting.php?id=<?= (int) $m['id'] ?>" target="_blank">Print</a>
-    <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/meeting_remind.php?id=<?= (int) $m['id'] ?>"
+    <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/meeting_edit.php?id=<?= (int) $m['id'] ?><?= ministry_qs((int) $m['ministry_id']) ?>">Edit</a>
+    <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/print_meeting.php?id=<?= (int) $m['id'] ?><?= ministry_qs((int) $m['ministry_id']) ?>" target="_blank">Print</a>
+    <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/meeting_remind.php?id=<?= (int) $m['id'] ?><?= ministry_qs((int) $m['ministry_id']) ?>"
        onclick="return confirm('Send an email reminder for this <?= $isTrip ? 'trip' : 'meeting' ?> now?');">🔔 Remind</a>
-    <a class="btn btn-danger btn-sm" href="<?= BASE_URL ?>/meeting_delete.php?id=<?= (int) $m['id'] ?>"
+    <a class="btn btn-danger btn-sm" href="<?= BASE_URL ?>/meeting_delete.php?id=<?= (int) $m['id'] ?><?= ministry_qs((int) $m['ministry_id']) ?>"
        onclick="return confirm('Delete this <?= $isTrip ? 'trip' : 'meeting' ?>? This cannot be undone.');">Delete</a>
   </div>
 </div>

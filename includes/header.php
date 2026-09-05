@@ -6,9 +6,17 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/functions.php';
 
-$active   = $active ?? '';
-$dueSoon  = is_logged_in() ? meetings_in_reminder_window() : [];
-$dueCount = count($dueSoon);
+$active     = $active ?? '';
+$ministryId = is_logged_in() ? resolve_ministry_id() : null;
+$dueSoon    = $ministryId ? meetings_in_reminder_window($ministryId) : [];
+$dueCount   = count($dueSoon);
+$ministry   = $ministryId ? ministry_by_id($ministryId) : null;
+$brandName  = $ministry['name'] ?? APP_NAME;
+$brandMinister = $ministry['minister_name'] ?? '';
+$brandInitials = e(initials_from_name($brandMinister ?: APP_NAME));
+// A super_admin's chosen ?ministry_id= must survive every nav click — office_admin
+// never needs this since resolve_ministry_id() locks them to their own ministry anyway.
+$navQS = ((current_user()['role'] ?? '') === 'super_admin' && $ministryId) ? '?ministry_id=' . $ministryId : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,30 +29,37 @@ $dueCount = count($dueSoon);
 <body>
 <header class="site-header">
   <div class="brand-bar">
+    <?php if (!empty($ministry['minister_photo'])): ?>
     <span class="brand-photo">
-      <img class="photo-fit" src="<?= BASE_URL ?>/<?= MINISTER_PHOTO ?>" alt="<?= e(MINISTER_NAME) ?>"
-           onerror="this.closest('.brand-photo').replaceWith(Object.assign(document.createElement('div'),{className:'brand-photo-fallback',textContent:'SE'}))">
+      <img class="photo-fit" src="<?= BASE_URL ?>/<?= e($ministry['minister_photo']) ?>" alt="<?= e($brandMinister) ?>"
+           onerror="this.closest('.brand-photo').replaceWith(Object.assign(document.createElement('div'),{className:'brand-photo-fallback',textContent:'<?= $brandInitials ?>'}))">
     </span>
+    <?php else: ?>
+      <div class="brand-photo-fallback"><?= $brandInitials ?></div>
+    <?php endif; ?>
     <div class="brand-text">
-      <div class="ministry"><?= e(MINISTRY_NAME) ?></div>
+      <div class="ministry"><?= e($brandName) ?></div>
       <h1><?= e(APP_NAME) ?></h1>
-      <div class="minister-name"><?= e(MINISTER_NAME) ?></div>
+      <?php if ($brandMinister): ?><div class="minister-name"><?= e($brandMinister) ?></div><?php endif; ?>
     </div>
     <div class="brand-spacer"></div>
+    <?php if ((current_user()['role'] ?? '') === 'super_admin'): ?>
+      <a href="<?= BASE_URL ?>/admin_dashboard.php" class="btn btn-outline btn-sm" style="align-self:center;">← Admin Dashboard</a>
+    <?php endif; ?>
   </div>
 </header>
 
 <?php if (is_logged_in()): ?>
 <nav class="site-nav">
   <div class="container">
-    <a href="<?= BASE_URL ?>/index.php" class="<?= $active === 'dashboard' ? 'active' : '' ?>">Dashboard</a>
-    <a href="<?= BASE_URL ?>/schedule.php" class="<?= $active === 'schedule' ? 'active' : '' ?>">Weekly Schedule</a>
-    <a href="<?= BASE_URL ?>/meetings.php" class="<?= $active === 'meetings' ? 'active' : '' ?>">All Meetings</a>
-    <a href="<?= BASE_URL ?>/meeting_edit.php" class="<?= $active === 'add' ? 'active' : '' ?>">+ Add Meeting</a>
-    <a href="<?= BASE_URL ?>/staff.php" class="<?= $active === 'staff' ? 'active' : '' ?>">Staff</a>
+    <a href="<?= BASE_URL ?>/index.php<?= $navQS ?>" class="<?= $active === 'dashboard' ? 'active' : '' ?>">Dashboard</a>
+    <a href="<?= BASE_URL ?>/schedule.php<?= $navQS ?>" class="<?= $active === 'schedule' ? 'active' : '' ?>">Weekly Schedule</a>
+    <a href="<?= BASE_URL ?>/meetings.php<?= $navQS ?>" class="<?= $active === 'meetings' ? 'active' : '' ?>">All Meetings</a>
+    <a href="<?= BASE_URL ?>/meeting_edit.php<?= $navQS ?>" class="<?= $active === 'add' ? 'active' : '' ?>">+ Add Meeting</a>
+    <a href="<?= BASE_URL ?>/staff.php<?= $navQS ?>" class="<?= $active === 'staff' ? 'active' : '' ?>">Staff</a>
     <div class="nav-right">
       <?php if ($dueCount > 0): ?>
-        <a href="<?= BASE_URL ?>/index.php" title="Meetings/trips due for a reminder">
+        <a href="<?= BASE_URL ?>/index.php<?= $navQS ?>" title="Meetings/trips due for a reminder">
           🔔 <span class="badge-alert"><?= $dueCount ?></span>
         </a>
       <?php endif; ?>

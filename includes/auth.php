@@ -24,6 +24,35 @@ function require_login(): void
     }
 }
 
+/** Gate for the platform-wide admin area — a super_admin session is required. */
+function require_super_admin(): void
+{
+    require_login();
+    if ((current_user()['role'] ?? '') !== 'super_admin') {
+        http_response_code(403);
+        exit('Forbidden — Super Admin access only.');
+    }
+}
+
+/**
+ * Which ministry's data the current request should read/write.
+ * office_admin is always locked to their own ministry — $_GET is never
+ * trusted here, since this is the tenant security boundary between offices.
+ * super_admin may pass ?ministry_id= to view/manage a specific office;
+ * returns null if super_admin hasn't chosen one yet.
+ */
+function resolve_ministry_id(): ?int
+{
+    $user = current_user();
+    if (!$user) {
+        return null;
+    }
+    if (($user['role'] ?? 'office_admin') === 'super_admin') {
+        return isset($_GET['ministry_id']) ? (int) $_GET['ministry_id'] : null;
+    }
+    return $user['ministry_id'] ?? null;
+}
+
 /**
  * Attempt to log a user in. Returns true on success.
  */
@@ -36,10 +65,12 @@ function attempt_login(string $username, string $password): bool
     if ($user && password_verify($password, $user['password_hash'])) {
         session_regenerate_id(true);
         $_SESSION['user'] = [
-            'id'        => (int) $user['id'],
-            'username'  => $user['username'],
-            'full_name' => $user['full_name'],
-            'email'     => $user['email'],
+            'id'          => (int) $user['id'],
+            'username'    => $user['username'],
+            'full_name'   => $user['full_name'],
+            'email'       => $user['email'],
+            'role'        => $user['role'] ?? 'office_admin',
+            'ministry_id' => isset($user['ministry_id']) ? (int) $user['ministry_id'] : null,
         ];
         return true;
     }

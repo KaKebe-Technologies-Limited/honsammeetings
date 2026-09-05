@@ -23,20 +23,26 @@ $meeting = [
     'reminder_hours_before' => REMINDER_LEAD_HOURS,
 ];
 
-$allStaff = all_staff();
 $selectedTeam = [];
+$ministryId   = null;
 
 if ($editing) {
-    $stmt = db()->prepare('SELECT * FROM meetings WHERE id = ?');
-    $stmt->execute([$id]);
-    $found = $stmt->fetch();
+    $found = find_meeting($id);
     if (!$found) {
         header('Location: ' . BASE_URL . '/meetings.php');
         exit;
     }
     $meeting = $found;
+    $ministryId = (int) $found['ministry_id'];
     $selectedTeam = array_column(meeting_team($id), 'id');
+} else {
+    $ministryId = resolve_ministry_id();
+    if (!$ministryId) {
+        redirect_no_ministry();
+    }
 }
+
+$allStaff = all_staff($ministryId);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -101,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $conflict = find_scheduling_conflicts(
             $title, $eventType, $dateFrom, $dateTo, $startTime, $endTime,
-            $editing ? $id : null
+            $ministryId, $editing ? $id : null
         );
 
         if ($conflict['duplicate']) {
@@ -133,24 +139,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $savedId = $id;
             } else {
                 $stmt = db()->prepare(
-                    'INSERT INTO meetings (event_type, title, meeting_date, end_date, start_time, end_time,
+                    'INSERT INTO meetings (ministry_id, event_type, title, meeting_date, end_date, start_time, end_time,
                      venue, agenda, attendees, contact, notes, reminder_hours_before, created_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                 );
                 $stmt->execute([
-                    $eventType, $title, $dateFrom, $dateTo, $startTime, $endTime,
+                    $ministryId, $eventType, $title, $dateFrom, $dateTo, $startTime, $endTime,
                     $venue, $agenda, $attendees, $contact, $notes, $reminderHours,
                     current_user()['id'],
                 ]);
                 $savedId = (int) db()->lastInsertId();
             }
             save_meeting_team($savedId, $selectedTeam);
+
+            $params = $clashWarning ? [] : ['saved' => 1];
+            if ((current_user()['role'] ?? '') === 'super_admin') {
+                $params['ministry_id'] = $ministryId;
+            }
             if ($clashWarning) {
                 flash_set('warning', $clashWarning);
-                header('Location: ' . BASE_URL . '/schedule.php');
-            } else {
-                header('Location: ' . BASE_URL . '/schedule.php?saved=1');
             }
+            header('Location: ' . BASE_URL . '/schedule.php' . ($params ? '?' . http_build_query($params) : ''));
             exit;
         }
     }
@@ -240,7 +249,7 @@ require __DIR__ . '/includes/header.php';
         <div class="field full">
           <label>Accompanying Team (optional)</label>
           <?php if (!$allStaff): ?>
-            <div class="hint">No staff added yet. <a href="<?= BASE_URL ?>/staff_edit.php" target="_blank">Add staff</a> to pick them here.</div>
+            <div class="hint">No staff added yet. <a href="<?= BASE_URL ?>/staff_edit.php<?= ministry_qs($ministryId, '?') ?>" target="_blank">Add staff</a> to pick them here.</div>
           <?php else: ?>
             <div class="team-picker">
               <?php foreach ($allStaff as $s): ?>
@@ -251,7 +260,7 @@ require __DIR__ . '/includes/header.php';
               <?php endforeach; ?>
             </div>
           <?php endif; ?>
-          <span class="hint">OPM staff accompanying the Minister — managed on the <a href="<?= BASE_URL ?>/staff.php" target="_blank">Staff</a> page.</span>
+          <span class="hint">Staff accompanying the Minister — managed on the <a href="<?= BASE_URL ?>/staff.php<?= ministry_qs($ministryId, '?') ?>" target="_blank">Staff</a> page.</span>
         </div>
 
         <div class="field full">
@@ -284,7 +293,7 @@ require __DIR__ . '/includes/header.php';
 
       <div class="btn-row" style="margin-top:8px;">
         <button type="submit" class="btn btn-primary"><?= $editing ? 'Save Changes' : 'Save' ?></button>
-        <a href="<?= BASE_URL ?>/schedule.php" class="btn btn-outline">Cancel</a>
+        <a href="<?= BASE_URL ?>/schedule.php<?= ministry_qs($ministryId, '?') ?>" class="btn btn-outline">Cancel</a>
       </div>
     </form>
   </div>

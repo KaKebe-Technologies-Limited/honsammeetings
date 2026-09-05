@@ -398,6 +398,11 @@ textarea { resize: vertical; min-height: 80px; }
   margin-bottom: 14px;
   box-shadow: 0 4px 14px rgba(0,0,0,.4);
 }
+.flag-badge {
+  width: 88px; height: 62px; margin: 0 auto 14px;
+  border-radius: 6px; overflow: hidden; border: 2px solid var(--gold);
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
 .login-head .ministry {
   color: var(--gold); font-size: 12px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .05em;

@@ -25,10 +25,11 @@ if (file_exists(__DIR__ . '/db_secret.php')) {
 define('DB_CHARSET', 'utf8mb4');
 
 // ---- Application ----
-define('APP_NAME', "Minister's Weekly Schedule");
-define('MINISTRY_NAME', 'Office of the Minister for Relief, Disaster Preparedness and Refugees');
-define('MINISTER_NAME', 'Hon. Sam Engola');
-define('MINISTER_PHOTO', 'assets/img/min1.jpg'); // relative to BASE_URL
+// Platform product name — NOT a specific ministry's identity. Each ministry's
+// own name/minister/photo now live in the `ministries` table (see
+// includes/functions.php's ministry_by_id()/current_ministry()), since this
+// app now serves more than one office.
+define('APP_NAME', 'OPM Schedules');
 
 // ---- Email reminders (sent via authenticated SMTP, see includes/mailer.php) ----
 // Real credentials live in mail_secret.php (gitignored — never committed).

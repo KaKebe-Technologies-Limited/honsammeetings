@@ -3,16 +3,21 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
 if (!is_logged_in()) {
-    require __DIR__ . '/home.php';
+    require __DIR__ . '/login.php';
     exit;
+}
+
+$ministryId = resolve_ministry_id();
+if (!$ministryId) {
+    redirect_no_ministry();
 }
 
 $page_title = 'Dashboard';
 $active     = 'dashboard';
 
 [$monday, $friday] = week_range();
-$thisWeek  = meetings_between($monday, $friday);
-$dueSoon   = meetings_in_reminder_window();
+$thisWeek  = meetings_between($monday, $friday, $ministryId);
+$dueSoon   = meetings_in_reminder_window($ministryId);
 $dueIds    = array_column($dueSoon, 'id');
 
 $today = date('Y-m-d');
@@ -25,7 +30,9 @@ $thisWeekAhead = array_values(array_filter($thisWeek, function ($m) use ($today,
     return !$m['end_time'] || $m['end_time'] >= $now;
 }));
 
-$totalUpcoming = (int) db()->query('SELECT COUNT(*) FROM meetings WHERE IFNULL(end_date, meeting_date) >= CURDATE()')->fetchColumn();
+$stmt = db()->prepare('SELECT COUNT(*) FROM meetings WHERE ministry_id = ? AND IFNULL(end_date, meeting_date) >= CURDATE()');
+$stmt->execute([$ministryId]);
+$totalUpcoming = (int) $stmt->fetchColumn();
 
 require __DIR__ . '/includes/header.php';
 ?>
@@ -43,8 +50,8 @@ require __DIR__ . '/includes/header.php';
       <div class="sub">Here is what's on the Minister's calendar.</div>
     </div>
     <div class="btn-row">
-      <a href="<?= BASE_URL ?>/meeting_edit.php" class="btn btn-gold">+ Add Meeting / Trip</a>
-      <a href="<?= BASE_URL ?>/print_weekly.php" target="_blank" class="btn btn-outline">🖨 Print Weekly Schedule</a>
+      <a href="<?= BASE_URL ?>/meeting_edit.php<?= ministry_qs($ministryId, '?') ?>" class="btn btn-gold">+ Add Meeting / Trip</a>
+      <a href="<?= BASE_URL ?>/print_weekly.php<?= ministry_qs($ministryId, '?') ?>" target="_blank" class="btn btn-outline">🖨 Print Weekly Schedule</a>
     </div>
   </div>
 
@@ -74,11 +81,11 @@ require __DIR__ . '/includes/header.php';
       <h2 style="font-size:18px;">This Week</h2>
       <div class="sub"><?= e(fmt_date_medium($monday)) ?> &ndash; <?= e(fmt_date_medium($friday)) ?></div>
     </div>
-    <a href="<?= BASE_URL ?>/schedule.php" class="btn btn-outline btn-sm">View Weekly Schedule →</a>
+    <a href="<?= BASE_URL ?>/schedule.php<?= ministry_qs($ministryId, '?') ?>" class="btn btn-outline btn-sm">View Weekly Schedule →</a>
   </div>
 
   <?php if (!$thisWeekAhead): ?>
-    <div class="panel empty">Nothing left on the calendar this week. <a href="<?= BASE_URL ?>/meeting_edit.php">Add one now</a>.</div>
+    <div class="panel empty">Nothing left on the calendar this week. <a href="<?= BASE_URL ?>/meeting_edit.php<?= ministry_qs($ministryId, '?') ?>">Add one now</a>.</div>
   <?php else: ?>
     <?php foreach ($thisWeekAhead as $m):
         $soon = in_array($m['id'], $dueIds, true);

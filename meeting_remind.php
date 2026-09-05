@@ -5,16 +5,14 @@ require_once __DIR__ . '/includes/mailer.php';
 require_login();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = db()->prepare('SELECT * FROM meetings WHERE id = ?');
-$stmt->execute([$id]);
-$m = $stmt->fetch();
+$m = find_meeting($id);
 
 if (!$m) {
     flash_set('error', 'Meeting not found.');
 } else {
     [$subject, $body] = build_reminder_email($m);
     $html = build_reminder_email_html($m);
-    [$to, $cc] = reminder_recipients();
+    [$to, $cc] = reminder_recipients((int) $m['ministry_id']);
 
     if (!$to && !$cc) {
         flash_set('error', 'No recipients configured (no users, no MAIL_CC_LIST).');

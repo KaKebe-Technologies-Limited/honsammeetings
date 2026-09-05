@@ -1,5 +1,95 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/auth.php';
+
+/**
+ * Called by every per-ministry page when resolve_ministry_id() comes back
+ * empty. For a genuine super_admin who hasn't picked a ministry yet, that
+ * means "go choose one". For anyone else, it means their session predates
+ * ministry_id being added to it (or is otherwise broken) — sending them to
+ * the super_admin-only admin area would just 403 them, so force a clean
+ * re-login instead, which repopulates the session correctly.
+ */
+function redirect_no_ministry(): void
+{
+    if ((current_user()['role'] ?? '') === 'super_admin') {
+        header('Location: ' . BASE_URL . '/admin_ministries.php');
+    } else {
+        logout();
+        header('Location: ' . BASE_URL . '/login.php');
+    }
+    exit;
+}
+
+/** One ministry (tenant) row by id, memoized per request. */
+function ministry_by_id(?int $id): ?array
+{
+    static $cache = [];
+    if (!$id) {
+        return null;
+    }
+    if (!array_key_exists($id, $cache)) {
+        $stmt = db()->prepare('SELECT * FROM ministries WHERE id = ?');
+        $stmt->execute([$id]);
+        $cache[$id] = $stmt->fetch() ?: null;
+    }
+    return $cache[$id];
+}
+
+/** The ministry the current request is operating on — see resolve_ministry_id(). */
+function current_ministry(): ?array
+{
+    return ministry_by_id(resolve_ministry_id());
+}
+
+/**
+ * "&ministry_id=5" (or "?ministry_id=5") to append to a URL so a super_admin's
+ * chosen ministry survives the click — a no-op for office_admin, who never
+ * needs it since resolve_ministry_id() locks them to their own ministry
+ * regardless of the query string.
+ */
+function ministry_qs(int $ministryId, string $prefix = '&'): string
+{
+    return (current_user()['role'] ?? '') === 'super_admin' ? $prefix . 'ministry_id=' . $ministryId : '';
+}
+
+/**
+ * Inline SVG of the Uganda flag (six black/yellow/red stripes, white roundel
+ * with a simplified grey crested-crane silhouette) — used on the pre-login
+ * pages, which can no longer show one specific ministry's photo now that the
+ * platform serves more than one office.
+ */
+function uganda_flag_svg(): string
+{
+    return '<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flag of Uganda" style="display:block;width:100%;height:100%;">
+        <rect y="0" width="300" height="33.33" fill="#000000"/>
+        <rect y="33.33" width="300" height="33.33" fill="#FCDC04"/>
+        <rect y="66.66" width="300" height="33.34" fill="#D90000"/>
+        <rect y="100" width="300" height="33.33" fill="#000000"/>
+        <rect y="133.33" width="300" height="33.33" fill="#FCDC04"/>
+        <rect y="166.66" width="300" height="33.34" fill="#D90000"/>
+        <circle cx="150" cy="100" r="42" fill="#fff"/>
+        <g fill="#58585a">
+            <ellipse cx="150" cy="108" rx="15" ry="9"/>
+            <path d="M158 100 C155 88 148 80 140 76 C146 78 151 82 154 87 C155 80 160 74 167 71 C164 78 163 84 165 89 C170 87 175 88 178 91 C172 92 167 96 165 101 Z"/>
+            <line x1="145" y1="116" x2="141" y2="128" stroke="#58585a" stroke-width="2"/>
+            <line x1="155" y1="116" x2="159" y2="128" stroke="#58585a" stroke-width="2"/>
+        </g>
+        <circle cx="166" cy="83" r="2" fill="#c81414"/>
+    </svg>';
+}
+
+/** "Hon. Sam Engola" -> "SE" — for the circular initials badge used as a photo fallback. */
+function initials_from_name(string $name): string
+{
+    $words = array_filter(preg_split('/\s+/', trim($name)), fn($w) => !preg_match('/^(hon\.?|dr\.?|mr\.?|mrs\.?|ms\.?)$/i', $w));
+    $words = array_values($words);
+    $initials = '';
+    foreach (array_slice($words, 0, 2) as $w) {
+        $initials .= mb_strtoupper(mb_substr($w, 0, 1));
+    }
+    return $initials ?: '?';
+}
 
 /**
  * Monday..Friday work-week date range (Y-m-d) containing $reference
@@ -106,22 +196,54 @@ function trip_day_badge(array $m, string $ymd): ?string
  * whole range — callers that render per-day (schedule/print) should use
  * meeting_covers_day() to place it on each applicable day.
  */
-function meetings_between(string $from, string $to): array
+function meetings_between(string $from, string $to, int $ministryId): array
 {
     $stmt = db()->prepare(
         'SELECT * FROM meetings
-         WHERE IFNULL(end_date, meeting_date) >= ? AND meeting_date <= ?
+         WHERE ministry_id = ? AND IFNULL(end_date, meeting_date) >= ? AND meeting_date <= ?
          ORDER BY meeting_date ASC, start_time ASC'
     );
-    $stmt->execute([$from, $to]);
+    $stmt->execute([$ministryId, $from, $to]);
     return $stmt->fetchAll();
 }
 
-/** Active staff, for the "Accompanying Team" picker, alphabetical. */
-function all_staff(bool $activeOnly = true): array
+/** One meeting by id, enforcing tenant isolation (super_admin may fetch any; office_admin only their own). */
+function find_meeting(int $id): ?array
 {
-    $sql = 'SELECT * FROM staff' . ($activeOnly ? ' WHERE active = 1' : '') . ' ORDER BY name ASC';
-    return db()->query($sql)->fetchAll();
+    $stmt = db()->prepare('SELECT * FROM meetings WHERE id = ?');
+    $stmt->execute([$id]);
+    $m = $stmt->fetch();
+    if (!$m) {
+        return null;
+    }
+    if ((current_user()['role'] ?? '') !== 'super_admin' && (int) $m['ministry_id'] !== (int) resolve_ministry_id()) {
+        return null;
+    }
+    return $m;
+}
+
+/** One staff row by id, enforcing tenant isolation like find_meeting(). */
+function find_staff(int $id): ?array
+{
+    $stmt = db()->prepare('SELECT * FROM staff WHERE id = ?');
+    $stmt->execute([$id]);
+    $s = $stmt->fetch();
+    if (!$s) {
+        return null;
+    }
+    if ((current_user()['role'] ?? '') !== 'super_admin' && (int) $s['ministry_id'] !== (int) resolve_ministry_id()) {
+        return null;
+    }
+    return $s;
+}
+
+/** Active staff for a ministry, for the "Accompanying Team" picker, alphabetical. */
+function all_staff(int $ministryId, bool $activeOnly = true): array
+{
+    $sql = 'SELECT * FROM staff WHERE ministry_id = ?' . ($activeOnly ? ' AND active = 1' : '') . ' ORDER BY name ASC';
+    $stmt = db()->prepare($sql);
+    $stmt->execute([$ministryId]);
+    return $stmt->fetchAll();
 }
 
 /** Staff accompanying a given meeting/trip, alphabetical. */
@@ -167,16 +289,19 @@ function join_names(array $names): string
  * Pass $unsentOnly = true (used by the cron sender) to exclude meetings
  * that have already been emailed.
  */
-function meetings_in_reminder_window(bool $unsentOnly = false): array
+function meetings_in_reminder_window(int $ministryId, bool $unsentOnly = false): array
 {
     $sql = "SELECT * FROM meetings
-            WHERE TIMESTAMP(meeting_date, COALESCE(start_time,'00:00:00')) >= NOW()
+            WHERE ministry_id = ?
+              AND TIMESTAMP(meeting_date, COALESCE(start_time,'00:00:00')) >= NOW()
               AND TIMESTAMP(meeting_date, COALESCE(start_time,'00:00:00')) <= DATE_ADD(NOW(), INTERVAL reminder_hours_before HOUR)";
     if ($unsentOnly) {
         $sql .= " AND reminder_sent = 0";
     }
     $sql .= " ORDER BY meeting_date ASC, start_time ASC";
-    return db()->query($sql)->fetchAll();
+    $stmt = db()->prepare($sql);
+    $stmt->execute([$ministryId]);
+    return $stmt->fetchAll();
 }
 
 /**
@@ -194,10 +319,11 @@ function find_scheduling_conflicts(
     string $dateTo,
     ?string $startTime,
     ?string $endTime,
+    int $ministryId,
     ?int $excludeId = null
 ): array {
-    $sql = 'SELECT * FROM meetings WHERE IFNULL(end_date, meeting_date) >= ? AND meeting_date <= ?';
-    $params = [$dateFrom, $dateTo];
+    $sql = 'SELECT * FROM meetings WHERE ministry_id = ? AND IFNULL(end_date, meeting_date) >= ? AND meeting_date <= ?';
+    $params = [$ministryId, $dateFrom, $dateTo];
     if ($excludeId) {
         $sql .= ' AND id <> ?';
         $params[] = $excludeId;
@@ -254,7 +380,7 @@ function meeting_has_clash(array $m): bool
 {
     $conflict = find_scheduling_conflicts(
         $m['title'], $m['event_type'], $m['meeting_date'], $m['end_date'] ?: $m['meeting_date'],
-        $m['start_time'], $m['end_time'], (int) $m['id']
+        $m['start_time'], $m['end_time'], (int) $m['ministry_id'], (int) $m['id']
     );
     return (bool) $conflict['overlaps'];
 }
@@ -311,9 +437,10 @@ function build_reminder_email(array $m): array
  *
  * @return array{style: string, headerHtml: string}
  */
-function email_chrome(string $subtitle = ''): array
+function email_chrome(string $subtitle = '', string $badgeInitials = ''): array
 {
     $subtitleHtml = $subtitle !== '' ? "<p>" . e($subtitle) . "</p>" : '';
+    $badgeInitials = $badgeInitials !== '' ? $badgeInitials : 'SE';
     return [
         'style' => "
             body { font-family: Arial, Helvetica, sans-serif; color: #202124; margin: 0; background: #eef0f3; }
@@ -339,7 +466,7 @@ function email_chrome(string $subtitle = ''): array
         'headerHtml' => "
             <div class='header'>
                 <div class='header-row'>
-                    <div class='logo-cell'><div class='logo-box'>SE</div></div>
+                    <div class='logo-cell'><div class='logo-box'>" . e($badgeInitials) . "</div></div>
                     <div class='brand-cell'><h1>" . e(APP_NAME) . "</h1>$subtitleHtml</div>
                 </div>
             </div>
@@ -351,9 +478,10 @@ function email_chrome(string $subtitle = ''): array
 /** Build the styled HTML body for a meeting/trip reminder email. */
 function build_reminder_email_html(array $m): string
 {
-    $isTrip = $m['event_type'] === 'trip';
-    $chrome = email_chrome($isTrip ? 'Trip Reminder' : 'Meeting Reminder');
-    $link   = SITE_URL . '/print_meeting.php?id=' . (int) $m['id'];
+    $isTrip   = $m['event_type'] === 'trip';
+    $ministry = ministry_by_id((int) $m['ministry_id']);
+    $chrome   = email_chrome($isTrip ? 'Trip Reminder' : 'Meeting Reminder', initials_from_name($ministry['minister_name'] ?? ''));
+    $link     = SITE_URL . '/print_meeting.php?id=' . (int) $m['id'];
 
     $rows = [];
     $rows[] = "<p><span class='label'>📌 Title:</span> " . e($m['title']) . "</p>";
@@ -403,7 +531,7 @@ function build_reminder_email_html(array $m): string
                 <p style='text-align:center;margin-top:26px;'><a href='{$link}' class='btn'>🔍 View Full Details</a></p>
             </div>
             <div class='footer'>
-                <p>" . e(MINISTRY_NAME) . "<br>&copy; " . date('Y') . " " . e(APP_NAME) . "</p>
+                <p>" . e($ministry['name'] ?? '') . "<br>&copy; " . date('Y') . " " . e(APP_NAME) . "</p>
             </div>
         </div>
     </body>
@@ -412,9 +540,10 @@ function build_reminder_email_html(array $m): string
 }
 
 /** Build the styled HTML body for the "weekly program PDF" email (the PDF itself is attached by the caller). */
-function build_weekly_program_email_html(string $monday, string $friday, int $meetingCount): string
+function build_weekly_program_email_html(string $monday, string $friday, int $meetingCount, int $ministryId): string
 {
-    $chrome = email_chrome('Weekly Program');
+    $ministry = ministry_by_id($ministryId);
+    $chrome = email_chrome('Weekly Program', initials_from_name($ministry['minister_name'] ?? ''));
     $link   = SITE_URL . '/schedule.php';
     $rangeLabel = fmt_date_long($monday) . ' – ' . fmt_date_long($friday);
 
@@ -434,7 +563,7 @@ function build_weekly_program_email_html(string $monday, string $friday, int $me
                 <p style='text-align:center;margin-top:26px;'><a href='{$link}' class='btn'>🔍 View Online</a></p>
             </div>
             <div class='footer'>
-                <p>" . e(MINISTRY_NAME) . "<br>&copy; " . date('Y') . " " . e(APP_NAME) . "</p>
+                <p>" . e($ministry['name'] ?? '') . "<br>&copy; " . date('Y') . " " . e(APP_NAME) . "</p>
             </div>
         </div>
     </body>
@@ -442,10 +571,78 @@ function build_weekly_program_email_html(string $monday, string $friday, int $me
     ";
 }
 
-/** Every registered user's email + the fixed CC list, for reminder sends. */
-function reminder_recipients(): array
+/** A ministry's registered users' emails + the fixed platform CC list, for reminder sends. */
+function reminder_recipients(int $ministryId): array
 {
-    $to = array_values(array_filter(array_column(db()->query('SELECT email FROM users')->fetchAll(), 'email')));
+    $stmt = db()->prepare('SELECT email FROM users WHERE ministry_id = ?');
+    $stmt->execute([$ministryId]);
+    $to = array_values(array_filter(array_column($stmt->fetchAll(), 'email')));
     $cc = defined('MAIL_CC_LIST') ? MAIL_CC_LIST : [];
     return [$to, $cc];
+}
+
+/* ============================================================
+ * Super Admin platform-wide aggregates (admin_dashboard.php)
+ * ============================================================ */
+
+/** Top-line platform counts for the Super Admin dashboard's stat cards. */
+function admin_stats(): array
+{
+    $db = db();
+    [$monday, $friday] = week_range();
+    $stmt = $db->prepare('SELECT COUNT(*) FROM meetings WHERE IFNULL(end_date, meeting_date) >= ? AND meeting_date <= ?');
+    $stmt->execute([$monday, $friday]);
+
+    return [
+        'ministries'         => (int) $db->query('SELECT COUNT(*) FROM ministries')->fetchColumn(),
+        'users'              => (int) $db->query('SELECT COUNT(*) FROM users')->fetchColumn(),
+        'meetings_this_week' => (int) $stmt->fetchColumn(),
+    ];
+}
+
+/** [{label: 'Apr', count: N}, ...] — meetings/trips started per month, most recent $months first (chronological). */
+function admin_meetings_per_month(int $months = 6): array
+{
+    $rows = [];
+    for ($i = $months - 1; $i >= 0; $i--) {
+        $ref = (new DateTime('first day of this month'))->modify("-{$i} months");
+        $from = $ref->format('Y-m-01');
+        $to   = $ref->format('Y-m-t');
+        $stmt = db()->prepare('SELECT COUNT(*) FROM meetings WHERE meeting_date BETWEEN ? AND ?');
+        $stmt->execute([$from, $to]);
+        $rows[] = ['label' => $ref->format('M'), 'count' => (int) $stmt->fetchColumn()];
+    }
+    return $rows;
+}
+
+/** Top $limit ministries by meetings/trips started this calendar month. */
+function admin_top_ministries(int $limit = 3): array
+{
+    $stmt = db()->prepare(
+        "SELECT mi.id, mi.name, mi.minister_name, mi.minister_photo, COUNT(m.id) AS meeting_count
+         FROM ministries mi
+         LEFT JOIN meetings m ON m.ministry_id = mi.id
+             AND m.meeting_date BETWEEN ? AND ?
+         GROUP BY mi.id
+         ORDER BY meeting_count DESC, mi.name ASC
+         LIMIT " . (int) $limit
+    );
+    $stmt->execute([date('Y-m-01'), date('Y-m-t')]);
+    return $stmt->fetchAll();
+}
+
+/** Every ministry with a quick "meetings this week" activity count, for the dashboard's Ministries list. */
+function admin_ministries_overview(): array
+{
+    [$monday, $friday] = week_range();
+    $stmt = db()->prepare(
+        "SELECT mi.*, COUNT(m.id) AS meetings_this_week
+         FROM ministries mi
+         LEFT JOIN meetings m ON m.ministry_id = mi.id
+             AND IFNULL(m.end_date, m.meeting_date) >= ? AND m.meeting_date <= ?
+         GROUP BY mi.id
+         ORDER BY mi.name ASC"
+    );
+    $stmt->execute([$monday, $friday]);
+    return $stmt->fetchAll();
 }

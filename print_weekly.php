@@ -3,10 +3,16 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_login();
 
+$ministryId = resolve_ministry_id();
+if (!$ministryId) {
+    redirect_no_ministry();
+}
+$ministry = ministry_by_id($ministryId);
+
 $offset = isset($_GET['w']) ? (int) $_GET['w'] : 0;
 [$monday, $friday] = week_range('today', $offset);
 
-$weekMeetings = meetings_between($monday, $friday);
+$weekMeetings = meetings_between($monday, $friday, $ministryId);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,13 +28,15 @@ $weekMeetings = meetings_between($monday, $friday);
 </div>
 <div class="sheet">
   <div class="doc-header">
+    <?php if (!empty($ministry['minister_photo'])): ?>
     <span class="doc-header-photo-wrap">
-      <img class="photo-fit" src="<?= BASE_URL ?>/<?= MINISTER_PHOTO ?>" alt="<?= e(MINISTER_NAME) ?>"
+      <img class="photo-fit" src="<?= BASE_URL ?>/<?= e($ministry['minister_photo']) ?>" alt="<?= e($ministry['minister_name'] ?? '') ?>"
            onerror="this.closest('.doc-header-photo-wrap').remove()">
     </span>
+    <?php endif; ?>
     <div class="doc-header-text">
-      <div class="ministry"><?= e(MINISTRY_NAME) ?></div>
-      <div class="minister"><?= e(MINISTER_NAME) ?></div>
+      <div class="ministry"><?= e($ministry['name'] ?? '') ?></div>
+      <div class="minister"><?= e($ministry['minister_name'] ?? '') ?></div>
       <div class="title">Weekly Schedule</div>
     </div>
   </div>

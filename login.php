@@ -2,8 +2,15 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
+function post_login_redirect(): string
+{
+    return (current_user()['role'] ?? '') === 'super_admin'
+        ? BASE_URL . '/admin_dashboard.php'
+        : BASE_URL . '/index.php';
+}
+
 if (is_logged_in()) {
-    header('Location: ' . BASE_URL . '/index.php');
+    header('Location: ' . post_login_redirect());
     exit;
 }
 
@@ -13,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     if (attempt_login($username, $password)) {
-        header('Location: ' . BASE_URL . '/index.php');
+        header('Location: ' . post_login_redirect());
         exit;
     }
     $error = 'Incorrect username or password.';
@@ -31,11 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="login-wrap">
   <div class="login-card">
     <div class="login-head">
-      <span class="login-photo">
-        <img class="photo-fit" src="<?= BASE_URL ?>/<?= MINISTER_PHOTO ?>" alt="<?= e(MINISTER_NAME) ?>"
-             onerror="this.closest('.login-photo').style.display='none'">
-      </span>
-      <div class="ministry"><?= e(MINISTRY_NAME) ?></div>
+      <div class="flag-badge"><?= uganda_flag_svg() ?></div>
+      <div class="ministry">Government of Uganda</div>
       <h1><?= e(APP_NAME) ?></h1>
     </div>
     <div class="login-body">

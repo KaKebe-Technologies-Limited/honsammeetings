@@ -3,14 +3,19 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_login();
 
+$ministryId = resolve_ministry_id();
+if (!$ministryId) {
+    redirect_no_ministry();
+}
+
 $page_title = 'All Meetings';
 $active     = 'meetings';
 
 $q = trim($_GET['q'] ?? '');
 $typeFilter = $_GET['type'] ?? '';
 
-$where = [];
-$params = [];
+$where = ['ministry_id = ?'];
+$params = [$ministryId];
 if ($q !== '') {
     $where[] = '(title LIKE ? OR venue LIKE ? OR agenda LIKE ?)';
     $like = '%' . $q . '%';
@@ -20,10 +25,7 @@ if (in_array($typeFilter, ['inhouse', 'trip'], true)) {
     $where[] = 'event_type = ?';
     $params[] = $typeFilter;
 }
-$sql = 'SELECT * FROM meetings';
-if ($where) {
-    $sql .= ' WHERE ' . implode(' AND ', $where);
-}
+$sql = 'SELECT * FROM meetings WHERE ' . implode(' AND ', $where);
 $sql .= ' ORDER BY meeting_date DESC, start_time DESC';
 $stmt = db()->prepare($sql);
 $stmt->execute($params);
@@ -43,6 +45,9 @@ require __DIR__ . '/includes/header.php';
     </div>
     <div class="btn-row">
       <form method="get" style="display:flex;gap:8px;">
+        <?php if ((current_user()['role'] ?? '') === 'super_admin'): ?>
+          <input type="hidden" name="ministry_id" value="<?= (int) $ministryId ?>">
+        <?php endif; ?>
         <input type="text" name="q" placeholder="Search title, venue, agenda…" value="<?= e($q) ?>">
         <select name="type" onchange="this.form.submit()">
           <option value="">All types</option>
@@ -51,7 +56,7 @@ require __DIR__ . '/includes/header.php';
         </select>
         <button class="btn btn-outline" type="submit">Search</button>
       </form>
-      <a href="<?= BASE_URL ?>/meeting_edit.php" class="btn btn-gold">+ Add Meeting / Trip</a>
+      <a href="<?= BASE_URL ?>/meeting_edit.php<?= ministry_qs($ministryId, '?') ?>" class="btn btn-gold">+ Add Meeting / Trip</a>
     </div>
   </div>
 
